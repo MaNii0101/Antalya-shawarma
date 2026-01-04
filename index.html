@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antalya Shawarma</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="mobile.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCT7AO_PmeURgQTZUWNRt83jUsSWXZq3aU&libraries=places"></script>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">🌯 Antalya Shawarma</div>
+            
+            <!-- Mobile Menu Button -->
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" id="mobileMenuBtn">
+                ☰
+            </button>
+            
+            <div class="nav-buttons" id="navButtons">
+                <button class="icon-btn" onclick="document.getElementById('ownerModal').style.display='flex';" title="Owner Step 2" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); border: 3px solid #8b5cf6; font-size: 1.5rem; animation: pulse 2s infinite;">🔧</button>
+                <button class="icon-btn" onclick="showNotifications()">🔔<span class="badge" id="notificationBadge">0</span></button>
+                <button class="icon-btn" onclick="showFavorites()">❤️<span class="badge" id="favoritesBadge">0</span></button>
+                <button class="icon-btn" onclick="showCart()">🛒<span class="badge" id="cartBadge">0</span></button>
+                <button class="icon-btn" onclick="showAccount()">👤</button>
+                <button class="login-btn" onclick="showLogin()">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <video autoplay muted loop playsinline class="hero-video">
+            <source src="shawarma.mp4" type="video/mp4">
+        </video>
+        <div class="hero-content">
+            <div class="hero-text">
+                <h1>Antalya Shawarma</h1>
+                <p>Authentic Turkish Shawarma & Kebabs Delivered Fresh</p>
+                <button class="cta-btn" onclick="scrollToMenu()">🌯 Order Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="category-bar">
+        <div class="categories">
+            <div class="category-item active" onclick="filterCategory('shawarma')"><div class="category-icon">🌯</div><div class="category-name">Shawarma</div></div>
+            <div class="category-item" onclick="filterCategory('burgers')"><div class="category-icon">🍔</div><div class="category-name">Burgers</div></div>
+            <div class="category-item" onclick="filterCategory('pizza')"><div class="category-icon">🍕</div><div class="category-name">Pizza</div></div>
+            <div class="category-item" onclick="filterCategory('chicken')"><div class="category-icon">🍗</div><div class="category-name">Chicken</div></div>
+            <div class="category-item" onclick="filterCategory('sandwiches')"><div class="category-icon">🥪</div><div class="category-name">Sandwiches</div></div>
+            <div class="category-item" onclick="filterCategory('fries')"><div class="category-icon">🍟</div><div class="category-name">Fries</div></div>
+            <div class="category-item" onclick="filterCategory('drinks')"><div class="category-icon">🥤</div><div class="category-name">Drinks</div></div>
+        </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="main-content">
+        <h2 class="section-title" id="menuTitle">Our Menu</h2>
+        <div class="menu-grid" id="menuGrid"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="social-footer">
+        <div class="social-content">
+            <div class="footer-section">
+                <h3>Antalya Shawarma</h3>
+                <p style="color: rgba(255,255,255,0.6);">Authentic Turkish cuisine!</p>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <div>📞 +964 750 123 4567</div>
+                <div>📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4821262e270829263c29243129662b2725">[email&#160;protected]</a></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals - Food Detail -->
+    <div class="modal" id="foodModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('foodModal')">×</button>
+            <h2 id="modalFoodName"></h2>
+            <div style="text-align: center; font-size: 5rem; margin: 1rem 0;" id="modalFoodIcon"></div>
+            <p id="modalFoodDesc" style="color: rgba(255,255,255,0.7);"></p>
+            <p style="font-size: 2rem; color: #ff6b6b; font-weight: bold;" id="modalFoodPrice"></p>
+            
+            <div id="customizationSection" style="display: none;">
+                <label style="font-size: 1.1rem; margin-bottom: 1rem; display: block;">🎯 Customize</label>
+                <div id="customOptions"></div>
+            </div>
+            
+            <div class="form-group">
+                <label>Quantity</label>
+                <div class="quantity-control">
+                    <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
+                    <span class="qty-display" id="quantity">1</span>
+                    <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Special Instructions</label>
+                <textarea id="specialInstructions" rows="3" placeholder="Extra spicy..."></textarea>
+            </div>
+            
+            <button class="submit-btn" onclick="addToCart()">Add to Cart - <span id="totalPrice">$0.00</span></button>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('loginModal')">×</button>
+            <h2 id="authTitle">🔐 Login</h2>
+            
+            <div id="emailVerificationSection" style="display: none;">
+                <div style="background: rgba(66,133,244,0.1); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                    <h3 style="color: #6ba3ff;">📧 Verify Email</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Code sent to <strong id="verifyEmailDisplay"></strong></p>
+                </div>
+                <div class="form-group">
+                    <label>Verification Code</label>
+                    <input type="text" id="verificationCode" placeholder="6-digit code" maxlength="6" style="text-align: center; font-size: 1.5rem;">
+                </div>
+                <button class="submit-btn" onclick="verifyCode()">Verify</button>
+                <p style="text-align: center; margin-top: 1rem;"><a href="#" onclick="resendCode(); return false;" style="color: #6ba3ff;">Resend</a></p>
+            </div>
+
+            <div id="authFormSection">
+                <div class="auth-options">
+                    <button class="auth-btn google-btn" onclick="loginWithGoogle()">🔵 Google</button>
+                    <button class="auth-btn apple-btn" onclick="loginWithApple()">🍎 Apple</button>
+                </div>
+                <div class="divider">or</div>
+                <form onsubmit="handleEmailAuth(event)">
+                    <div class="form-group" id="nameGroup" style="display: none;">
+                        <label>Name *</label>
+                        <input type="text" id="authName" placeholder="Your name">
+                    </div>
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="authEmail" placeholder="email@gmail.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" id="authPassword" placeholder="Min 6 characters" required>
+                    </div>
+                    <div class="form-group" id="phoneGroup" style="display: none;">
+                        <label>Phone *</label>
+                        <input type="tel" id="authPhone" placeholder="+44 7700 900123">
+                    </div>
+                    <div class="form-group" id="ageGroup" style="display: none;">
+                        <label>Age (Optional)</label>
+                        <input type="number" id="authAge" placeholder="Your age" min="13" max="120">
+                    </div>
+                    <div class="form-group" id="addressGroup" style="display: none;">
+                        <label>Location *</label>
+                        <input type="text" id="authAddress" placeholder="Your address" readonly>
+                        <button type="button" class="map-btn" onclick="pickLocation()">📍 Pick Location</button>
+                    </div>
+                    <button type="submit" class="submit-btn" id="authSubmitBtn">Login</button>
+                </form>
+                <p style="text-align: center; margin-top: 1rem;">
+                    <span id="authToggleText">Don't have account?</span>
+                    <a href="#" onclick="toggleAuthMode(); return false;" style="color: #ff6b6b;"> Sign Up</a>
+                </p>
+                
+                <!-- Role Selection Buttons -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <p style="text-align: center; color: rgba(255,255,255,0.6); margin-bottom: 1rem; font-size: 0.9rem;">Or continue as:</p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <!-- Employer Button -->
+                        <button onclick="showOwnerLogin()" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 1rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(102,126,234,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(102,126,234,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(102,126,234,0.3)';">
+                            <span style="font-size: 1.8rem;">👔</span>
+                            <span>I'm Employer</span>
+                        </button>
+                        
+                        <!-- Driver Button -->
+                        <button onclick="showDriverLogin()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 1rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 0.95rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 15px rgba(16,185,129,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(16,185,129,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(16,185,129,0.3)';">
+                            <span style="font-size: 1.8rem;">🚗</span>
+                            <span>I'm Driver</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant Login Modal -->
+    <div class="modal" id="ownerLoginModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('ownerLoginModal')">×</button>
+            <h2>👨‍💼 Restaurant Login</h2>
+            <form onsubmit="handleOwnerLogin(event)">
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="ownerEmail" placeholder="owner@antalya.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" id="ownerPassword" placeholder="Password" required>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #fbbf24, #f59e0b);">Login</button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- Owner Modal - Step 3: Login Form -->
+    <div class="modal" id="ownerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+        <div style="background: #1a1a1a; padding: 3rem; border-radius: 15px; max-width: 500px; width: 90%; position: relative;">
+            <button onclick="document.getElementById('ownerModal').style.display = 'none';" style="position: absolute; top: 1rem; right: 1rem; background: #ff4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; z-index: 10001;">×</button>
+            
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔧</div>
+                <h2 style="color: #8b5cf6; margin: 0; font-size: 1.8rem;">Owner Access</h2>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 0.5rem;">Step 3: Login Form</p>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="color: white; display: block; margin-bottom: 0.5rem;">Email *</label>
+                <input type="email" id="devEmail" placeholder="admin@antalyashawarma.com" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="color: white; display: block; margin-bottom: 0.5rem;">Password *</label>
+                <input type="password" id="devPassword" placeholder="Enter password" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="color: white; display: block; margin-bottom: 0.5rem;">PIN *</label>
+                <input type="text" id="devPin" placeholder="1234" maxlength="4" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+            </div>
+            
+            <button onclick="
+                var email = document.getElementById('devEmail').value;
+                var pass = document.getElementById('devPassword').value;
+                var pin = document.getElementById('devPin').value;
+                if (email === 'admin@antalyashawarma.com' && pass === 'admin2024' && pin === '1234') {
+                    document.getElementById('ownerModal').style.display = 'none';
+                    document.getElementById('ownerDashboard').style.display = 'block';
+                } else {
+                    alert('Wrong credentials! Try: admin@antalyashawarma.com / admin2024 / 1234');
+                }
+            " style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; width: 100%; font-size: 1.1rem; cursor: pointer; font-weight: 700;">
+                🔓 Unlock Owner Mode
+            </button>
+        </div>
+    </div>
+
+    <!-- Owner Dashboard - Step 5 -->
+    <div id="ownerDashboard" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; overflow-y: auto; padding: 2rem;">
+        <div style="max-width: 1200px; margin: 0 auto; position: relative;">
+            <button onclick="document.getElementById('ownerDashboard').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10001; box-shadow: 0 4px 15px rgba(255,68,68,0.4);">×</button>
+            
+            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 3rem; border-radius: 20px; text-align: center; color: white; margin-bottom: 2rem; box-shadow: 0 10px 40px rgba(139,92,246,0.3);">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">🔧</div>
+                <h1 style="margin: 0; font-size: 2.5rem; font-weight: 800;">Owner Console</h1>
+                <p style="margin: 1rem 0 0; font-size: 1.2rem; opacity: 0.95;">Full System Access & Control Panel</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2rem; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 20px rgba(16,185,129,0.3);">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">💰</div>
+                    <div id="revenueStat" style="font-size: 2rem; font-weight: 700;">£0.00</div>
+                    <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Total Revenue</div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 2rem; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 20px rgba(59,130,246,0.3);">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">📦</div>
+                    <div id="ordersStat" style="font-size: 2rem; font-weight: 700;">0</div>
+                    <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Total Orders</div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 2rem; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 20px rgba(245,158,11,0.3);">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">⏳</div>
+                    <div id="pendingStat" style="font-size: 2rem; font-weight: 700;">0</div>
+                    <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Pending</div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #ec4899, #db2777); padding: 2rem; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 20px rgba(236,72,153,0.3);">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">👥</div>
+                    <div id="usersStat" style="font-size: 2rem; font-weight: 700;">0</div>
+                    <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Users</div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #14b8a6, #0d9488); padding: 2rem; border-radius: 15px; text-align: center; color: white; box-shadow: 0 4px 20px rgba(20,184,166,0.3);">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🚗</div>
+                    <div id="driverCountStat" style="font-size: 2rem; font-weight: 700;">7</div>
+                    <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Drivers</div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <button onclick="document.getElementById('driverManagementModal').style.display = 'block';" style="padding: 2.5rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(16,185,129,0.3); display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                    <span style="font-size: 3rem;">🚗</span>
+                    <span>Driver Management</span>
+                    <span id="driversRegisteredText" style="font-size: 0.85rem; opacity: 0.9; font-weight: 400;">5 drivers registered</span>
+                </button>
+                
+                <button onclick="document.getElementById('bankSettingsModal').style.display = 'block';" style="padding: 2.5rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(245,158,11,0.3); display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                    <span style="font-size: 3rem;">🏦</span>
+                    <span>Bank Settings</span>
+                    <span style="font-size: 0.85rem; opacity: 0.9; font-weight: 400;">Payment configuration</span>
+                </button>
+                
+                <button onclick="alert('Restaurant Dashboard - Coming in next update!');" style="padding: 2.5rem; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(139,92,246,0.3); display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                    <span style="font-size: 3rem;">👨‍💼</span>
+                    <span>Restaurant Dashboard</span>
+                    <span style="font-size: 0.85rem; opacity: 0.9; font-weight: 400;">Order management</span>
+                </button>
+            </div>
+            
+            <div style="background: rgba(16,185,129,0.15); border: 2px solid #10b981; padding: 2.5rem; border-radius: 15px; text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+                <h2 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.8rem;">Owner Access Active</h2>
+                <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 1.05rem;">All system features and controls are now available</p>
+            </div>
+        </div>
+    </div>
+    <!-- Add New Driver Modal -->
+    <div id="addDriverModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10002; overflow-y: auto; padding: 2rem;">
+        <div style="max-width: 700px; margin: 0 auto; position: relative;">
+            <button onclick="document.getElementById('addDriverModal').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10003; box-shadow: 0 4px 15px rgba(255,68,68,0.4);">×</button>
+            
+            <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2.5rem; border-radius: 20px; text-align: center; color: white; margin-bottom: 2rem; box-shadow: 0 10px 40px rgba(16,185,129,0.3);">
+                <div style="font-size: 3.5rem; margin-bottom: 1rem;">➕</div>
+                <h1 style="margin: 0; font-size: 2rem; font-weight: 800;">Add New Driver</h1>
+                <p style="margin: 1rem 0 0; font-size: 1rem; opacity: 0.95;">Register a new driver to your team</p>
+            </div>
+            
+            <div style="background: #1a1a1a; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Full Name *</label>
+                    <input type="text" id="newDriverName" placeholder="e.g. Ali Ahmed" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Date of Birth *</label>
+                        <input type="date" id="newDriverDOB" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                    </div>
+                    <div>
+                        <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Gender *</label>
+                        <select id="newDriverGender" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                            <option value="">Select</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Email Address *</label>
+                    <input type="email" id="newDriverEmail" placeholder="driver@example.com" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Phone Number *</label>
+                    <input type="tel" id="newDriverPhone" placeholder="+44 7700 900123" pattern="[\+\d\s\-\(\)]+" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 0.5rem 0 0;">e.g. +44 7700 900123</p>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Password *</label>
+                    <input type="password" id="newDriverPassword" placeholder="Min 6 characters" minlength="6" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Profile Picture (Optional)</label>
+                    <input type="file" id="newDriverPicture" accept="image/*" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                    <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 0.5rem 0 0;">JPG, PNG, or GIF (max 5MB)</p>
+                </div>
+                
+                <div style="background: rgba(16,185,129,0.1); border: 2px solid #10b981; padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                    <p style="color: #10b981; margin: 0 0 0.5rem; font-weight: 700; font-size: 1rem;">🔐 Secret Code Will Be Generated</p>
+                    <p style="color: rgba(255,255,255,0.7); margin: 0; font-size: 0.9rem;">After registration, a unique secret code will be automatically generated for this driver. They can use this code to login and create their profile.</p>
+                </div>
+                
+                <button onclick="handleAddNewDriver()" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 1.2rem 2rem; border-radius: 10px; width: 100%; font-size: 1.1rem; cursor: pointer; font-weight: 700; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+                    ➕ Add Driver & Generate Secret Code
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Enhanced Driver Profile Modal -->
+    <div id="driverProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 10003; overflow-y: auto; padding: 2rem;">
+        <div style="max-width: 600px; margin: 0 auto; position: relative;">
+            <button onclick="document.getElementById('driverProfileModal').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10004; box-shadow: 0 4px 15px rgba(255,68,68,0.4);">×</button>
+            
+            <div style="background: linear-gradient(135deg, #1e40af, #1e3a8a); padding: 2rem 2rem 4rem; border-radius: 20px 20px 0 0; text-align: center; color: white; position: relative;">
+                <h2 style="margin: 0 0 1rem; font-size: 1.5rem; font-weight: 700;">Driver Profile</h2>
+                
+                <div style="width: 120px; height: 120px; margin: 0 auto 1rem; border-radius: 50%; border: 4px solid white; overflow: hidden; background: #2a2a2a; display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: 0 8px 25px rgba(0,0,0,0.3); position: relative;">
+                    <span id="profilePhotoIcon">👤</span>
+                    <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;">
+                </div>
+                <button id="changePhotoBtn" onclick="document.getElementById('profilePhotoInput').click();" style="display: none; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; padding: 0.5rem 1.5rem; border-radius: 20px; cursor: pointer; font-size: 0.9rem;">
+                    📷 Change Photo
+                </button>
+                
+                <div id="statusToggleContainer" style="display: none; margin-top: 1rem;">
+                    <label style="display: flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer;">
+                        <span style="font-size: 0.9rem;">Status:</span>
+                        <input type="checkbox" id="driverStatusToggle" onchange="
+                            var label = document.getElementById('driverStatusLabel');
+                            if (this.checked) {
+                                label.textContent = '✅ Active';
+                                label.style.color = '#10b981';
+                            } else {
+                                label.textContent = '❌ Inactive';
+                                label.style.color = '#ef4444';
+                            }
+                        " style="width: 40px; height: 20px;">
+                        <span id="driverStatusLabel" style="font-weight: 700;">✅ Active</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div style="background: #1a1a1a; padding: 2.5rem; border-radius: 0 0 20px 20px; margin-top: -2rem; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: rgba(255,255,255,0.6); display: block; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Full Name</label>
+                    <input type="text" id="viewDriverName" readonly style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 10px; color: white; font-size: 1rem; font-weight: 600; transition: background 0.3s;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: rgba(255,255,255,0.6); display: block; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Email</label>
+                    <input type="email" id="viewDriverEmail" readonly style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 10px; color: white; font-size: 1rem; transition: background 0.3s;">
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="color: rgba(255,255,255,0.6); display: block; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Phone Number</label>
+                    <input type="tel" id="viewDriverPhone" readonly style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 10px; color: white; font-size: 1rem; transition: background 0.3s;">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <label style="color: rgba(255,255,255,0.6); display: block; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Date of Birth</label>
+                        <input type="date" id="viewDriverDOB" readonly style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 10px; color: white; font-size: 1rem; transition: background 0.3s;">
+                    </div>
+                    <div>
+                        <label style="color: rgba(255,255,255,0.6); display: block; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">Gender</label>
+                        <select id="viewDriverGender" disabled style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 10px; color: white; font-size: 1rem; transition: background 0.3s;">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="passwordField" style="display: none; margin-bottom: 1.5rem;">
+                    <label style="color: rgba(255,255,255,0.6); display: block; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">New Password</label>
+                    <input type="password" id="viewDriverPassword" placeholder="Enter new password (min 6 chars)" style="width: 100%; padding: 1rem; background: #3a3a3a; border: 1px solid #666; border-radius: 10px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="background: rgba(16,185,129,0.1); border: 2px solid #10b981; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Total Deliveries</span>
+                        <span id="viewDriverDeliveries" style="color: #10b981; font-size: 1.5rem; font-weight: 700;">0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Rating</span>
+                        <span id="viewDriverRating" style="color: #fbbf24; font-size: 1.5rem; font-weight: 700;">⭐ 5.0</span>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(139,92,246,0.1); border: 2px solid #8b5cf6; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                    <label style="color: rgba(255,255,255,0.6); display: block; margin-bottom: 0.5rem; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">🔐 Secret Code</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <code id="viewDriverCode" style="flex: 1; color: #8b5cf6; font-size: 1.3rem; font-weight: 700; letter-spacing: 2px; padding: 0.5rem; background: rgba(139,92,246,0.1); border-radius: 8px; text-align: center;">-</code>
+                        <button onclick="
+                            var code = document.getElementById('viewDriverCode').textContent;
+                            navigator.clipboard.writeText(code).then(function() {
+                                alert('✅ Secret code copied to clipboard!\n\n' + code);
+                            });
+                        " style="background: #8b5cf6; color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; white-space: nowrap;">
+                            📋 Copy
+                        </button>
+                    </div>
+                    <p style="color: rgba(255,255,255,0.4); font-size: 0.75rem; margin: 0.5rem 0 0; text-align: center;">Format: DRV + Position + Initials</p>
+                </div>
+                
+                <!-- Driver Logout Button (only visible for driver login) -->
+                <div id="driverLogoutBtn" style="display: none; margin-top: 1.5rem;">
+                    <button onclick="logoutDriver()" style="width: 100%; background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">🚪</span>
+                        <span>Logout</span>
+                    </button>
+                </div>
+                
+                <!-- Owner-only buttons (hidden for driver login) -->
+                <div id="ownerOnlyButtons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem;">
+                    <button id="editDriverBtn" onclick="toggleEditMode()" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                        ✏️ Edit Profile
+                    </button>
+                    
+                    <button id="deleteDriverBtn" onclick="deleteDriver()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                        🗑️ Delete Driver
+                    </button>
+                </div>
+                
+                <button id="saveDriverBtn" onclick="saveDriverChanges()" style="display: none; background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; margin-top: 1rem; width: 100%;">
+                    💾 Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- Driver Management Modal -->
+    <div id="driverManagementModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10001; overflow-y: auto; padding: 2rem;">
+        <div style="max-width: 1000px; margin: 0 auto; position: relative;">
+            <button onclick="document.getElementById('driverManagementModal').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10002; box-shadow: 0 4px 15px rgba(255,68,68,0.4);">×</button>
+            
+            <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2.5rem; border-radius: 20px; text-align: center; color: white; margin-bottom: 2rem; box-shadow: 0 10px 40px rgba(16,185,129,0.3);">
+                <div style="font-size: 3.5rem; margin-bottom: 1rem;">🚗</div>
+                <h1 style="margin: 0; font-size: 2.2rem; font-weight: 800;">Driver Management</h1>
+                <p style="margin: 1rem 0 0; font-size: 1.1rem; opacity: 0.95;">Manage your delivery drivers</p>
+            </div>
+            
+            <button onclick="document.getElementById('addDriverModal').style.display = 'block';" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 1.2rem 2rem; border-radius: 12px; font-size: 1.1rem; cursor: pointer; font-weight: 700; box-shadow: 0 4px 15px rgba(16,185,129,0.3); margin-bottom: 2rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <span style="font-size: 1.5rem;">➕</span>
+                <span>Add New Driver</span>
+            </button>
+            
+            <div id="driverCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div style="background: #1a1a1a; padding: 2rem; border-radius: 15px; border: 2px solid #10b981; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🚗</div>
+                        <div>
+                            <h3 style="color: white; margin: 0; font-size: 1.2rem;">Mohammed Ali</h3>
+                            <p style="color: #10b981; margin: 0.25rem 0 0; font-size: 0.9rem;">⭐ Active</p>
+                        </div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
+                        <p style="margin: 0.5rem 0;">📱 +44 7700 900123</p>
+                        <p style="margin: 0.5rem 0;">📦 Total Deliveries: 247</p>
+                        <p style="margin: 0.5rem 0;">⭐ Rating: 4.9/5.0</p>
+                    </div>
+                    <button onclick="openDriverProfile('driver-001')" style="background: #10b981; color: white; border: none; padding: 0.8rem; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600;">View Details</button>
+                </div>
+                
+                <div style="background: #1a1a1a; padding: 2rem; border-radius: 15px; border: 2px solid #10b981; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🚗</div>
+                        <div>
+                            <h3 style="color: white; margin: 0; font-size: 1.2rem;">Ahmed Hassan</h3>
+                            <p style="color: #10b981; margin: 0.25rem 0 0; font-size: 0.9rem;">⭐ Active</p>
+                        </div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
+                        <p style="margin: 0.5rem 0;">📱 +44 7700 900456</p>
+                        <p style="margin: 0.5rem 0;">📦 Total Deliveries: 189</p>
+                        <p style="margin: 0.5rem 0;">⭐ Rating: 4.8/5.0</p>
+                    </div>
+                    <button onclick="openDriverProfile('driver-002')" style="background: #10b981; color: white; border: none; padding: 0.8rem; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600;">View Details</button>
+                </div>
+                
+                <div style="background: #1a1a1a; padding: 2rem; border-radius: 15px; border: 2px solid #10b981; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🚗</div>
+                        <div>
+                            <h3 style="color: white; margin: 0; font-size: 1.2rem;">Omar Khan</h3>
+                            <p style="color: #10b981; margin: 0.25rem 0 0; font-size: 0.9rem;">⭐ Active</p>
+                        </div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
+                        <p style="margin: 0.5rem 0;">📱 +44 7700 900789</p>
+                        <p style="margin: 0.5rem 0;">📦 Total Deliveries: 312</p>
+                        <p style="margin: 0.5rem 0;">⭐ Rating: 5.0/5.0</p>
+                    </div>
+                    <button onclick="openDriverProfile('driver-003')" style="background: #10b981; color: white; border: none; padding: 0.8rem; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600;">View Details</button>
+                </div>
+                
+                <div style="background: #1a1a1a; padding: 2rem; border-radius: 15px; border: 2px solid #10b981; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🚗</div>
+                        <div>
+                            <h3 style="color: white; margin: 0; font-size: 1.2rem;">Yusuf Ibrahim</h3>
+                            <p style="color: #10b981; margin: 0.25rem 0 0; font-size: 0.9rem;">⭐ Active</p>
+                        </div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
+                        <p style="margin: 0.5rem 0;">📱 +44 7700 900321</p>
+                        <p style="margin: 0.5rem 0;">📦 Total Deliveries: 156</p>
+                        <p style="margin: 0.5rem 0;">⭐ Rating: 4.7/5.0</p>
+                    </div>
+                    <button onclick="openDriverProfile('driver-004')" style="background: #10b981; color: white; border: none; padding: 0.8rem; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600;">View Details</button>
+                </div>
+                
+                <div style="background: #1a1a1a; padding: 2rem; border-radius: 15px; border: 2px solid #10b981; box-shadow: 0 4px 20px rgba(16,185,129,0.2);">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🚗</div>
+                        <div>
+                            <h3 style="color: white; margin: 0; font-size: 1.2rem;">Tariq Mansoor</h3>
+                            <p style="color: #10b981; margin: 0.25rem 0 0; font-size: 0.9rem;">⭐ Active</p>
+                        </div>
+                    </div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-bottom: 1rem;">
+                        <p style="margin: 0.5rem 0;">📱 +44 7700 900654</p>
+                        <p style="margin: 0.5rem 0;">📦 Total Deliveries: 203</p>
+                        <p style="margin: 0.5rem 0;">⭐ Rating: 4.9/5.0</p>
+                    </div>
+                    <button onclick="openDriverProfile('driver-005')" style="background: #10b981; color: white; border: none; padding: 0.8rem; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600;">View Details</button>
+                </div>
+            </div>
+            
+            <div style="background: rgba(16,185,129,0.1); border: 2px solid #10b981; padding: 2rem; border-radius: 15px; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                <h2 id="activeDriversMessage" style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.6rem;">5 Active Drivers</h2>
+                <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 1rem;">All drivers are ready for deliveries</p>
+            </div>
+        </div>
+    </div>
+    <!-- Bank Settings Modal -->
+    <div id="bankSettingsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10001; overflow-y: auto; padding: 2rem;">
+        <div style="max-width: 800px; margin: 0 auto; position: relative;">
+            <button onclick="document.getElementById('bankSettingsModal').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10002; box-shadow: 0 4px 15px rgba(255,68,68,0.4);">×</button>
+            
+            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 2.5rem; border-radius: 20px; text-align: center; color: white; margin-bottom: 2rem; box-shadow: 0 10px 40px rgba(245,158,11,0.3);">
+                <div style="font-size: 3.5rem; margin-bottom: 1rem;">🏦</div>
+                <h1 style="margin: 0; font-size: 2.2rem; font-weight: 800;">Bank Account Settings</h1>
+                <p style="margin: 1rem 0 0; font-size: 1.1rem; opacity: 0.95;">Configure your payment accounts</p>
+            </div>
+            
+            <div style="background: #1a1a1a; padding: 2.5rem; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <div style="margin-bottom: 2rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Bank Name *</label>
+                    <input type="text" id="bankName" value="Barclays Bank UK" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 2rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Account Number *</label>
+                    <input type="text" id="accountNumber" value="12345678" maxlength="8" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 2rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Sort Code *</label>
+                    <input type="text" id="sortCode" value="20-00-00" maxlength="8" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 2rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">IBAN</label>
+                    <input type="text" id="iban" value="GB29 NWBK 6016 1331 9268 19" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <div style="margin-bottom: 2rem;">
+                    <label style="color: white; display: block; margin-bottom: 0.5rem; font-weight: 600;">Card Number (for online payments)</label>
+                    <input type="text" id="cardNumber" value="4532 **** **** 1234" style="width: 100%; padding: 1rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
+                </div>
+                
+                <button onclick="
+                    var bank = document.getElementById('bankName').value;
+                    var acc = document.getElementById('accountNumber').value;
+                    var sort = document.getElementById('sortCode').value;
+                    alert('Bank Settings Saved!\\n\\nBank: ' + bank + '\\nAccount: ' + acc + '\\nSort Code: ' + sort);
+                    document.getElementById('bankSettingsModal').style.display = 'none';
+                " style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none; padding: 1.2rem 2rem; border-radius: 10px; width: 100%; font-size: 1.1rem; cursor: pointer; font-weight: 700; box-shadow: 0 4px 15px rgba(245,158,11,0.3);">
+                    💾 Save Bank Settings
+                </button>
+            </div>
+            
+            <div style="background: rgba(245,158,11,0.1); border: 2px solid #f59e0b; padding: 1.5rem; border-radius: 12px; margin-top: 2rem;">
+                <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 0.95rem;">
+                    <strong style="color: #f59e0b;">🔒 Secure Information</strong><br>
+                    Your bank details are encrypted and stored securely. Only authorized owners can access this information.
+                </p>
+            </div>
+        </div>
+    </div>
+    <!-- Restaurant Dashboard -->
+    <div class="modal" id="ownerModal">
+        <div class="modal-content" style="max-width: 1000px;">
+            <button class="close-btn" onclick="closeModal('ownerModal')">×</button>
+            <h2>👨‍💼 Restaurant Dashboard</h2>
+            <div id="ownerContent"></div>
+        </div>
+    </div>
+
+    <!-- Cart Modal -->
+    <div class="modal" id="cartModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('cartModal')">×</button>
+            <h2>🛒 Cart</h2>
+            <div id="cartItems"></div>
+            <div class="cart-total"><span>Total:</span><span id="cartTotal">$0.00</span></div>
+            <button class="submit-btn" onclick="proceedToCheckout()">Checkout</button>
+        </div>
+    </div>
+
+    <!-- Favorites -->
+    <div class="modal" id="favoritesModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <button class="close-btn" onclick="closeModal('favoritesModal')">×</button>
+            <h2>❤️ Favorites</h2>
+            <div id="favoritesContent"></div>
+        </div>
+    </div>
+
+    <!-- Notifications -->
+    <div class="modal" id="notificationsModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('notificationsModal')">×</button>
+            <h2>🔔 Notifications</h2>
+            <div id="notificationsContent"></div>
+        </div>
+    </div>
+
+    <!-- Account -->
+    <div class="modal" id="accountModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('accountModal')">×</button>
+            <h2>👤 Account</h2>
+            <div id="accountContent"></div>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div class="modal" id="mapModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <button class="close-btn" onclick="closeModal('mapModal')">×</button>
+            <h2>📍 Choose Location</h2>
+            
+            <!-- Current Location Button -->
+            <div style="margin-bottom: 1rem;">
+                <button onclick="getCurrentLocation()" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    <span style="font-size: 1.2rem;">📍</span>
+                    <span>Use My Current Location</span>
+                </button>
+            </div>
+            
+            <div style="position: relative;">
+                <div id="map" style="width: 100%; height: 500px; border-radius: 10px;"></div>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p id="selectedLocationText" style="color: #ff6b6b;">Click on map or use current location</p>
+            </div>
+            <button class="submit-btn" onclick="confirmLocation()">Confirm</button>
+        </div>
+    </div>
+
+    <!-- Checkout -->
+    <div class="modal" id="checkoutModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('checkoutModal')">×</button>
+            <h2>💳 Checkout</h2>
+            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                <h3>📍 Address</h3>
+                <p id="checkoutAddress" style="color: rgba(255,255,255,0.7);"></p>
+            </div>
+            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                <h3>📦 Summary</h3>
+                <div id="checkoutItems"></div>
+            </div>
+            <form onsubmit="handlePayment(event)">
+                <div class="form-group">
+                    <label>Payment Method *</label>
+                    <select id="paymentMethod" required onchange="toggleCardFields()">
+                        <option value="">Choose payment method</option>
+                        <option value="cash">💷 Cash on Delivery</option>
+                        <option value="card">💳 Card Payment</option>
+                    </select>
+                </div>
+                <div id="cardFieldsSection" style="display: none;">
+                    <div class="form-group">
+                        <label>Card Number</label>
+                        <input type="text" id="paymentCardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    <div class="form-group">
+                        <label>Name on Card</label>
+                        <input type="text" id="paymentCardName" placeholder="JOHN SMITH">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>Expiry</label>
+                            <input type="text" id="paymentExpiry" placeholder="MM/YY" maxlength="5">
+                        </div>
+                        <div class="form-group">
+                            <label>CVV</label>
+                            <input type="text" id="paymentCVV" placeholder="123" maxlength="4">
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #10b981, #059669);">💳 Pay <span id="paymentTotal">£0.00</span></button>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js?v=2.2"></script>
+    <script src="utils.js?v=2.2"></script>
+    <script>
+        // FORCE £ SYMBOL - Emergency fix for cache issues
+        window.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                // Force update all prices to £
+                document.querySelectorAll('.food-price').forEach(function(el) {
+                    if (el.textContent.includes('$')) {
+                        el.textContent = el.textContent.replace('$', '£');
+                    }
+                });
+            }, 100);
+        });
+        
+        function toggleCardFields() {
+            const method = document.getElementById('paymentMethod').value;
+            const cardSection = document.getElementById('cardFieldsSection');
+            const cardInputs = cardSection.querySelectorAll('input');
+            
+            if (method === 'card') {
+                cardSection.style.display = 'block';
+                cardInputs.forEach(input => input.setAttribute('required', 'required'));
+            } else {
+                cardSection.style.display = 'none';
+                cardInputs.forEach(input => input.removeAttribute('required'));
+            }
+        }
+    </script>
+    <!-- Driver Login Modal -->
+    <div class="modal" id="driverLoginModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('driverLoginModal')">×</button>
+            <h2>🚗 Driver Login</h2>
+            <p style="color: rgba(255,255,255,0.7); margin-bottom: 1.5rem;">First time? Use your secret code to create your profile</p>
+            <form onsubmit="handleDriverLogin(event)">
+                <div class="form-group">
+                    <label>Email or Secret Code *</label>
+                    <input type="text" id="driverEmailOrCode" placeholder="driver@antalya.com or DRV-2024-001" required>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" id="driverPassword" placeholder="Password" required>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #10b981, #059669);">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Driver Profile Creation Modal -->
+    <div class="modal" id="driverProfileModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('driverProfileModal')">×</button>
+            <h2>🚗 Create Driver Profile</h2>
+            <p style="color: rgba(255,255,255,0.7); margin-bottom: 1rem;">Secret Code: <span id="driverSecretCodeDisplay" style="color: #10b981; font-weight: 700;"></span></p>
+            <form onsubmit="createDriverProfile(event)">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="driverName" placeholder="John Smith" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="driverEmail" placeholder="driver@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Phone *</label>
+                    <input type="tel" id="driverPhone" placeholder="+44 7700 900 123" required>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group">
+                        <label>Gender *</label>
+                        <select id="driverGender" required>
+                            <option value="">Select gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Age *</label>
+                        <input type="number" id="driverAge" placeholder="25" min="18" max="70" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" id="driverNewPassword" placeholder="Min 6 characters" minlength="6" required>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #10b981, #059669);">Create Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Driver Dashboard Modal -->
+    <div class="modal" id="driverDashboardModal">
+        <div class="modal-content" style="max-width: 900px;">
+            <button class="close-btn" onclick="closeModal('driverDashboardModal')">×</button>
+            <h2>🚗 Driver Dashboard</h2>
+            <div id="driverDashboardContent"></div>
+        </div>
+    </div>
+
+</body>
+</html>
