@@ -23,6 +23,20 @@ const UK_CONFIG = {
     currency: '£'
 };
 
+// ========================================
+// LOGIN CREDENTIALS
+// ========================================
+const RESTAURANT_CREDENTIALS = {
+    email: 'restaurant@antalya.com',
+    password: 'restaurant123'
+};
+
+const OWNER_CREDENTIALS = {
+    email: 'admin@antalyashawarma.com',
+    password: 'admin2024',
+    pin: '1234'
+};
+
 // Calculate distance in miles (Haversine formula)
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 3959; // Earth radius in miles
@@ -80,220 +94,244 @@ function formatPrice(amount) {
 // ========================================
 // MENU DATA WITH CUSTOMIZATION OPTIONS
 // ========================================
+// COMPLETE ANTALYA SHAWARMA MENU - All Categories with Extras
 const menuData = {
-    shawarma: [
-        { id: 101, name: 'Chicken Shawarma', price: 7.99, icon: '🌯', desc: 'Tender chicken, garlic sauce', 
-          options: [
-            {name: 'Extra Meat', price: 2.00},
-            {name: 'Extra Garlic Sauce', price: 0.50},
-            {name: 'Add Cheese', price: 1.00},
-            {name: 'Make it Spicy', price: 0}
+    'grill-wraps': [
+        { id: 1, name: 'Mix Grill Wrap', price: 7.50, icon: '🌯', desc: 'Chicken & Lamb grilled wrap', image: '', 
+          extras: [
+              { name: 'Salad', price: 0 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 },
+              { name: 'Tahini sauce', price: 0 }
           ]
         },
-        { id: 102, name: 'Beef Shawarma', price: 8.99, icon: '🌯', desc: 'Juicy beef, tahini sauce',
-          options: [
-            {name: 'Extra Meat', price: 2.50},
-            {name: 'Extra Tahini', price: 0.50},
-            {name: 'Add Pickles', price: 0.50},
-            {name: 'Make it Spicy', price: 0}
+        { id: 2, name: 'Chicken Grill Wrap', price: 6.50, icon: '🌯', desc: 'Grilled chicken wrap', image: '',
+          extras: [
+              { name: 'Salad', price: 0 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 },
+              { name: 'Tahini sauce', price: 0 }
           ]
         },
-        { id: 103, name: 'Mixed Shawarma', price: 9.99, icon: '🌯', desc: 'Chicken & beef combo',
-          options: [
-            {name: 'Extra Meat', price: 3.00},
-            {name: 'Add Cheese', price: 1.00},
-            {name: 'Extra Sauce', price: 0.50}
-          ]
-        },
-        { id: 104, name: 'Lamb Shawarma', price: 10.99, icon: '🌯', desc: 'Premium lamb meat',
-          options: [
-            {name: 'Extra Lamb', price: 3.50},
-            {name: 'Add Hummus', price: 1.00},
-            {name: 'Make it Spicy', price: 0}
+        { id: 3, name: 'Lamb Grill Wrap', price: 7.00, icon: '🌯', desc: 'Grilled lamb wrap', image: '',
+          extras: [
+              { name: 'Salad', price: 0 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 },
+              { name: 'Tahini sauce', price: 0 }
           ]
         }
     ],
-    burgers: [
-        { id: 1, name: 'Classic Burger', price: 8.99, icon: '🍔', desc: 'Juicy beef patty with fresh veggies',
-          options: [
-            {name: 'Extra Patty', price: 2.50},
-            {name: 'Add Cheese', price: 1.00},
-            {name: 'Add Bacon', price: 1.50},
-            {name: 'Extra Sauce', price: 0.50}
+    'grill-portions': [
+        { id: 11, name: 'Mix Grill Portion (Chicken & Lamb)', price: 9.50, icon: '🍱', desc: 'Includes: Salad, Sauce, Naan bread', image: '',
+          extras: [
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Extra naan', price: 1.00 },
+              { name: 'Extra sauce', price: 0.50 }
           ]
         },
-        { id: 2, name: 'Cheese Burger', price: 9.99, icon: '🍔', desc: 'Double cheese, double delicious',
-          options: [
-            {name: 'Extra Cheese', price: 1.00},
-            {name: 'Add Bacon', price: 1.50},
-            {name: 'Extra Patty', price: 2.50}
+        { id: 12, name: 'Chicken Grill Portion', price: 8.50, icon: '🍱', desc: 'Includes: Salad, Sauce, Naan bread', image: '',
+          extras: [
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Extra naan', price: 1.00 },
+              { name: 'Extra sauce', price: 0.50 }
           ]
         },
-        { id: 3, name: 'Bacon Burger', price: 10.99, icon: '🍔', desc: 'Crispy bacon strips on top',
-          options: [
-            {name: 'Extra Bacon', price: 2.00},
-            {name: 'Add Cheese', price: 1.00},
-            {name: 'Add Egg', price: 1.00}
+        { id: 13, name: 'Lamb Grill Portion', price: 9.00, icon: '🍱', desc: 'Includes: Salad, Sauce, Naan bread', image: '',
+          extras: [
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Extra naan', price: 1.00 },
+              { name: 'Extra sauce', price: 0.50 }
+          ]
+        }
+    ],
+    'shawarma-portions-chips': [
+        { id: 21, name: 'Chicken Shawarma Portion with Chips', price: 7.50, icon: '🍟', desc: 'Served with chips', image: '',
+          extras: [
+              { name: 'Extra chips', price: 2.00 },
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 }
           ]
         },
-        { id: 4, name: 'Mega Burger', price: 12.99, icon: '🍔', desc: 'Triple patty monster',
-          options: [
-            {name: 'Extra Patty', price: 2.50},
-            {name: 'Add Cheese', price: 1.00},
-            {name: 'Add Everything', price: 3.00}
+        { id: 22, name: 'Mix Shawarma Portion with Chips', price: 8.00, icon: '🍟', desc: 'Chicken & Lamb with chips', image: '',
+          extras: [
+              { name: 'Extra chips', price: 2.00 },
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 }
+          ]
+        }
+    ],
+    'shawarma-portions-rice': [
+        { id: 31, name: 'Chicken Shawarma Portion with Rice', price: 7.50, icon: '🍚', desc: 'Served with rice', image: '',
+          extras: [
+              { name: 'Extra rice', price: 2.00 },
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 }
+          ]
+        },
+        { id: 32, name: 'Mix Shawarma Portion with Rice', price: 8.00, icon: '🍚', desc: 'Chicken & Lamb with rice', image: '',
+          extras: [
+              { name: 'Extra rice', price: 2.00 },
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 }
+          ]
+        }
+    ],
+    'shawarma-portions-bread': [
+        { id: 41, name: 'Chicken Shawarma Portion with Naan', price: 7.00, icon: '🍞', desc: 'Served with naan bread', image: '',
+          extras: [
+              { name: 'Extra bread', price: 1.00 },
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Extra sauce', price: 0.50 }
+          ]
+        },
+        { id: 42, name: 'Chicken Shawarma Portion with Turkish Bread', price: 7.00, icon: '🍞', desc: 'Served with Turkish bread', image: '',
+          extras: [
+              { name: 'Extra bread', price: 1.00 },
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Extra sauce', price: 0.50 }
+          ]
+        }
+    ],
+    shawarma: [
+        { id: 51, name: 'Chicken Shawarma Wrap (Naan)', price: 6.00, icon: '🌯', desc: 'Wrapped in naan', image: '',
+          extras: [
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Cheese', price: 0.50 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 }
+          ]
+        },
+        { id: 52, name: 'Chicken Shawarma Sandwich (Turkish Bread)', price: 6.00, icon: '🥙', desc: 'In Turkish bread', image: '',
+          extras: [
+              { name: 'Extra meat', price: 2.00 },
+              { name: 'Cheese', price: 0.50 },
+              { name: 'Garlic sauce', price: 0 },
+              { name: 'Chilli sauce', price: 0 }
+          ]
+        }
+    ],
+    'falafel-vegetarian': [
+        { id: 61, name: 'Falafel Portion (6 pieces)', price: 5.50, icon: '🥙', desc: '6 pieces of falafel', image: '',
+          extras: [
+              { name: 'Extra falafel', price: 1.00 },
+              { name: 'Salad', price: 0 },
+              { name: 'Sauce', price: 0 }
+          ]
+        },
+        { id: 62, name: 'Falafel Wrap', price: 5.00, icon: '🌯', desc: 'Falafel in wrap', image: '',
+          extras: [
+              { name: 'Extra falafel', price: 1.00 },
+              { name: 'Salad', price: 0 },
+              { name: 'Sauce', price: 0 }
+          ]
+        },
+        { id: 63, name: 'Falafel Sandwich', price: 5.00, icon: '🥙', desc: 'Falafel sandwich', image: '',
+          extras: [
+              { name: 'Extra falafel', price: 1.00 },
+              { name: 'Salad', price: 0 },
+              { name: 'Sauce', price: 0 }
+          ]
+        },
+        { id: 64, name: 'Grilled Halloumi Portion', price: 6.00, icon: '🧀', desc: 'Grilled halloumi cheese', image: '',
+          extras: [
+              { name: 'Extra halloumi', price: 1.50 },
+              { name: 'Salad', price: 0 },
+              { name: 'Sauce', price: 0 }
           ]
         }
     ],
     pizza: [
-        { id: 5, name: 'Pepperoni Pizza', price: 11.99, icon: '🍕', desc: 'Loaded with pepperoni',
-          options: [
-            {name: 'Extra Cheese', price: 2.00},
-            {name: 'Extra Pepperoni', price: 2.50},
-            {name: 'Stuffed Crust', price: 3.00},
-            {name: 'Add Mushrooms', price: 1.50}
+        { id: 71, name: 'Cheese & Tomato Pizza', price: 6.00, icon: '🍕', desc: 'Classic cheese pizza', image: '' },
+        { id: 72, name: 'Cheese & Tomato Pizza (Any 2 Toppings)', price: 7.00, icon: '🍕', desc: 'Choose 2 toppings', image: '',
+          extras: [
+              { name: 'Chicken', price: 0 },
+              { name: 'Lamb', price: 0 },
+              { name: 'Pepperoni', price: 0 },
+              { name: 'Mushrooms', price: 0 },
+              { name: 'Onions', price: 0 },
+              { name: 'Peppers', price: 0 },
+              { name: 'Olives', price: 0 }
           ]
         },
-        { id: 6, name: 'Margherita', price: 9.99, icon: '🍕', desc: 'Classic tomato and cheese',
-          options: [
-            {name: 'Extra Cheese', price: 2.00},
-            {name: 'Add Basil', price: 0.50},
-            {name: 'Extra Tomatoes', price: 1.00}
+        { id: 73, name: 'Cheese & Tomato Pizza (Any 3 Toppings)', price: 8.00, icon: '🍕', desc: 'Choose 3 toppings', image: '',
+          extras: [
+              { name: 'Chicken', price: 0 },
+              { name: 'Lamb', price: 0 },
+              { name: 'Pepperoni', price: 0 },
+              { name: 'Mushrooms', price: 0 },
+              { name: 'Onions', price: 0 },
+              { name: 'Peppers', price: 0 },
+              { name: 'Olives', price: 0 }
           ]
         },
-        { id: 7, name: 'BBQ Chicken', price: 13.99, icon: '🍕', desc: 'BBQ sauce and grilled chicken',
-          options: [
-            {name: 'Extra Chicken', price: 3.00},
-            {name: 'Extra BBQ Sauce', price: 0.50},
-            {name: 'Add Onions', price: 1.00}
+        { id: 74, name: 'Antalya Special Pizza (Mixed)', price: 9.00, icon: '🍕', desc: 'All toppings included', image: '' }
+    ],
+    'sides-extras': [
+        { id: 81, name: 'Chips', price: 2.50, icon: '🍟', image: '',
+          extras: [
+              { name: 'Cheese', price: 0.50 },
+              { name: 'Sauce', price: 0 },
+              { name: 'Seasoning', price: 0 }
           ]
         },
-        { id: 8, name: 'Veggie Supreme', price: 10.99, icon: '🍕', desc: 'Fresh vegetables',
-          options: [
-            {name: 'Extra Veggies', price: 2.00},
-            {name: 'Add Cheese', price: 2.00},
-            {name: 'Add Olives', price: 1.50}
+        { id: 82, name: 'Peri-Peri Chips', price: 3.00, icon: '🍟', desc: 'Spicy seasoned chips', image: '',
+          extras: [
+              { name: 'Cheese', price: 0.50 },
+              { name: 'Sauce', price: 0 }
+          ]
+        },
+        { id: 83, name: 'Turkish Bread (Samoon)', price: 1.00, icon: '🍞', desc: 'Fresh Turkish bread', image: '',
+          extras: [
+              { name: 'Cheese', price: 0.50 },
+              { name: 'Sauce', price: 0 }
           ]
         }
     ],
-    chicken: [
-        { id: 9, name: 'Fried Chicken Box', price: 14.99, icon: '🍗', desc: '8 pieces crispy chicken',
-          options: [
-            {name: 'Extra Piece (2pc)', price: 3.00},
-            {name: 'Spicy Coating', price: 0},
-            {name: 'Extra Sauce', price: 0.50}
-          ]
-        },
-        { id: 10, name: 'Chicken Wings', price: 9.99, icon: '🍗', desc: 'Spicy buffalo wings',
-          options: [
-            {name: 'Extra Wings (6pc)', price: 4.00},
-            {name: 'Extra Spicy', price: 0},
-            {name: 'Ranch Dip', price: 0.75}
-          ]
-        },
-        { id: 11, name: 'Chicken Tenders', price: 8.99, icon: '🍗', desc: 'Crispy chicken strips',
-          options: [
-            {name: 'Extra Tenders (3pc)', price: 2.50},
-            {name: 'Honey Mustard', price: 0.50},
-            {name: 'BBQ Sauce', price: 0.50}
-          ]
-        }
-    ],
-    sandwiches: [
-        { id: 13, name: 'Club Sandwich', price: 7.99, icon: '🥪', desc: 'Triple decker delight',
-          options: [
-            {name: 'Extra Meat', price: 2.00},
-            {name: 'Add Cheese', price: 1.00},
-            {name: 'Extra Bacon', price: 1.50}
-          ]
-        },
-        { id: 14, name: 'Grilled Chicken', price: 8.99, icon: '🥪', desc: 'Healthy grilled option',
-          options: [
-            {name: 'Extra Chicken', price: 2.50},
-            {name: 'Add Avocado', price: 1.50},
-            {name: 'Add Cheese', price: 1.00}
-          ]
-        }
-    ],
-    fries: [
-        { id: 17, name: 'Regular Fries', price: 3.99, icon: '🍟', desc: 'Crispy golden fries',
-          options: [
-            {name: 'Large Size', price: 2.00},
-            {name: 'Cheese Sauce', price: 1.00},
-            {name: 'Cajun Seasoning', price: 0.50}
-          ]
-        },
-        { id: 18, name: 'Cheese Fries', price: 5.99, icon: '🍟', desc: 'Covered in melted cheese',
-          options: [
-            {name: 'Extra Cheese', price: 1.50},
-            {name: 'Add Bacon', price: 2.00},
-            {name: 'Jalapeños', price: 0.75}
-          ]
-        },
-        { id: 19, name: 'Loaded Fries', price: 7.99, icon: '🍟', desc: 'Cheese, bacon, ranch',
-          options: [
-            {name: 'Extra Toppings', price: 2.50},
-            {name: 'Sour Cream', price: 0.75}
-          ]
-        },
-        { id: 20, name: 'Curly Fries', price: 4.99, icon: '🍟', desc: 'Seasoned spiral fries',
-          options: [
-            {name: 'Large Size', price: 2.00},
-            {name: 'Extra Seasoning', price: 0.50}
-          ]
-        }
+    sauces: [
+        { id: 91, name: 'Garlic Sauce', price: 0.50, icon: '🥣', image: '' },
+        { id: 92, name: 'Chilli Sauce', price: 0.50, icon: '🥣', image: '' },
+        { id: 93, name: 'Ketchup', price: 0.50, icon: '🥣', image: '' },
+        { id: 94, name: 'Mayonnaise', price: 0.50, icon: '🥣', image: '' }
     ],
     drinks: [
-        { id: 29, name: 'Coca Cola', price: 2.99, icon: '🥤', desc: 'Ice cold soda' },
-        { id: 30, name: 'Fresh Juice', price: 3.99, icon: '🧃', desc: 'Orange or apple' },
-        { id: 31, name: 'Milkshake', price: 4.99, icon: '🥤', desc: 'Chocolate, vanilla, strawberry' },
-        { id: 32, name: 'Coffee', price: 2.49, icon: '☕', desc: 'Freshly brewed coffee' }
-    ]
+        { id: 101, name: 'Coca-Cola', price: 1.50, icon: '🥤', image: '' },
+        { id: 102, name: 'Diet Coke', price: 1.50, icon: '🥤', image: '' },
+        { id: 103, name: 'Fanta', price: 1.50, icon: '🥤', image: '' },
+        { id: 104, name: 'Sprite', price: 1.50, icon: '🥤', image: '' },
+        { id: 105, name: 'Water', price: 1.00, icon: '💧', image: '' }
+    ],
+    burgers: [],
+    chicken: [],
+    sandwiches: [],
+    fries: []
 };
 
-// Owner & Owner Credentials
-const OWNER_CREDENTIALS = {
-    email: 'admin@antalyashawarma.com',
-    password: 'admin2024',
-    pin: '1234'
-};
-
-
-let ownerBankDetails = {
-    bankName: 'Barclays Bank UK',
-    accountNumber: '12345678',
-    sortCode: '20-00-00',
-    iban: 'GB29 NWBK 6016 1331 9268 19',
-    cardNumber: '4532 **** **** 1234'
-};
-
-// Global State
-let cart = [];
+// ========================================
+// GLOBAL STATE VARIABLES
+// ========================================
 let currentUser = null;
+let currentCategory = 'grill-wraps';
+let cart = [];
+let quantity = 1;
 let selectedFood = null;
 let selectedCustomizations = [];
-let quantity = 1;
-let isSignUpMode = false;
-let currentCategory = 'shawarma';
-let userDatabase = [];
-let orderHistory = [];
-let userFavorites = {};
-let userNotifications = {};
 let selectedLocation = null;
 let googleMap = null;
 let mapMarker = null;
 let isEditingLocation = false;
 let pendingOrders = [];
-let isOwnerLoggedIn = false;
+let orderHistory = [];
+let userDatabase = [];
+let userFavorites = {};
+let userNotifications = {};
+let isSignUpMode = false;
 let pendingVerification = null;
-
-// Owner Mode Trigger
-
-
-
-// Email Verification System
-function generateVerificationCode() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
+let isOwnerLoggedIn = false;
 
 function sendVerificationEmail(email, code) {
     console.log(`📧 Verification code for ${email}: ${code}`);
@@ -540,19 +578,27 @@ function openFoodModal(foodId) {
     quantity = 1;
     
     document.getElementById('modalFoodName').textContent = food.name;
-    document.getElementById('modalFoodIcon').textContent = food.icon;
-    document.getElementById('modalFoodDesc').textContent = food.desc;
+    
+    // Show image if exists, otherwise show icon
+    const modalIcon = document.getElementById('modalFoodIcon');
+    if (food.image && food.image.length > 0) {
+        modalIcon.innerHTML = `<img src="${food.image}" alt="${food.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 12px;">`;
+    } else {
+        modalIcon.textContent = food.icon;
+    }
+    
+    document.getElementById('modalFoodDesc').textContent = food.desc || '';
     document.getElementById('modalFoodPrice').textContent = '£' + food.price.toFixed(2);
     document.getElementById('quantity').textContent = quantity;
     document.getElementById('specialInstructions').value = '';
     
-    // Show customization options
-    if (food.options && food.options.length > 0) {
+    // Show customization options (extras)
+    if (food.extras && food.extras.length > 0) {
         const customSection = document.getElementById('customizationSection');
         const customOptions = document.getElementById('customOptions');
         customSection.style.display = 'block';
         
-        customOptions.innerHTML = food.options.map((option, index) => `
+        customOptions.innerHTML = food.extras.map((option, index) => `
             <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1);">
                 <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; flex: 1;">
                     <input type="checkbox" onchange="toggleCustomization(${index})" style="width: 20px; height: 20px; cursor: pointer;">
@@ -570,7 +616,7 @@ function openFoodModal(foodId) {
 }
 
 function toggleCustomization(index) {
-    const option = selectedFood.options[index];
+    const option = selectedFood.extras[index];
     const existingIndex = selectedCustomizations.findIndex(c => c.name === option.name);
     
     if (existingIndex > -1) {
@@ -623,21 +669,11 @@ function addToCart() {
 }
 
 // Owner Dashboard - Simple Order Management
-function showOwnerDashboard() {
-    console.log('👨‍💼 showOwnerDashboard() called');
-    console.log('isOwnerLoggedIn:', isOwnerLoggedIn);
-    console.log('isOwnerLoggedIn:', isOwnerLoggedIn);
+function showRestaurantDashboard() {
+    console.log('👨‍💼 showRestaurantDashboard() called');
     
-    // If owner is logged in, show owner dashboard instead
-    if (isOwnerLoggedIn) {
-        console.log('⚠️ Owner is logged in, redirecting to owner dashboard');
-        showOwnerDashboard();
-        return;
-    }
-    
-    console.log('✅ Proceeding with owner dashboard');
-    const modal = document.getElementById('ownerModal');
-    const content = document.getElementById('ownerContent');
+    const modal = document.getElementById('restaurantModal');
+    const content = document.getElementById('restaurantContent');
     console.log('Modal:', modal);
     console.log('Content:', content);
     
@@ -678,6 +714,16 @@ function showOwnerDashboard() {
                 <div style="font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem;">Completed</div>
                 <div style="font-size: 1.8rem; font-weight: 700;">${completed.length}</div>
             </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+            <button onclick="showMenuManagement()" class="submit-btn" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); padding: 1rem;">
+                🍽️ Menu Management
+            </button>
+            <button onclick="ownerLogout()" class="submit-btn" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 2px solid #ef4444; padding: 1rem;">
+                🚪 Logout
+            </button>
         </div>
         
         <!-- Pending Orders -->
@@ -725,16 +771,11 @@ function showOwnerDashboard() {
                 `).join('')
             }
         </div>
-        
-        <!-- Logout Button -->
-        <button onclick="ownerLogout()" class="submit-btn" style="width: 100%; margin-top: 2rem; background: rgba(239,68,68,0.2); color: #ef4444; border: 2px solid #ef4444;">
-            🚪 Logout
-        </button>
     `;
     
-    console.log('✅ Owner content set, opening modal...');
-    modal.classList.add('active');
-    console.log('✅ Owner dashboard modal should be visible now!');
+    console.log('✅ Restaurant content set, opening modal...');
+    modal.style.display = 'block';
+    console.log('✅ Restaurant dashboard modal should be visible now!');
     
     if (pending.length > 0) {
         playNotificationSound();
@@ -889,9 +930,28 @@ function handlePayment(event) {
 
 // Initialize
 window.onload = function() {
-    displayMenu('shawarma');
+    displayMenu('grill-wraps');
     loadUserData();
     loadDrivers(); // Load driver data
+};
+
+// Category display names
+const categoryNames = {
+    'grill-wraps': { name: 'Grill Wraps', icon: '🌯' },
+    'grill-portions': { name: 'Grill Portions', icon: '🍱' },
+    'shawarma-portions-chips': { name: 'Shawarma Portions (Chips)', icon: '🍟' },
+    'shawarma-portions-rice': { name: 'Shawarma Portions (Rice)', icon: '🍚' },
+    'shawarma-portions-bread': { name: 'Shawarma Portions (Bread)', icon: '🍞' },
+    'shawarma': { name: 'Shawarma Wraps & Sandwiches', icon: '🌯' },
+    'falafel-vegetarian': { name: 'Falafel & Vegetarian', icon: '🥙' },
+    'pizza': { name: 'Pizza', icon: '🍕' },
+    'sides-extras': { name: 'Sides & Extras', icon: '🍟' },
+    'sauces': { name: 'Sauces', icon: '🥣' },
+    'drinks': { name: 'Drinks', icon: '🥤' },
+    'burgers': { name: 'Burgers', icon: '🍔' },
+    'chicken': { name: 'Chicken', icon: '🍗' },
+    'sandwiches': { name: 'Sandwiches', icon: '🥪' },
+    'fries': { name: 'Fries', icon: '🍟' }
 };
 
 function loadUserData() {
@@ -931,17 +991,67 @@ function loadUserData() {
 // Rest of functions remain similar but adapted...
 // (Display menu, favorites, cart, account, etc.)
 
+
+// Category logos for products without images
+const categoryLogos = {
+    'grill-wraps': '🌯',
+    'grill-portions': '🍱', 
+    'shawarma-portions-chips': '🍟',
+    'shawarma-portions-rice': '🍚',
+    'shawarma-portions-bread': '🍞',
+    'shawarma': '🌯',
+    'falafel-vegetarian': '🥙',
+    'pizza': '🍕',
+    'sides-extras': '🍟',
+    'sauces': '🥣',
+    'drinks': '🥤'
+};
+
+// Get appropriate icon/logo for item
+function getItemDisplay(item, categoryKey) {
+    // If item has uploaded image, use it
+    if (item.image && item.image.length > 0) {
+        return `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">`;
+    }
+    
+    // If item has its own icon, use it
+    if (item.icon) {
+        return `<div style="font-size: 4rem;">${item.icon}</div>`;
+    }
+    
+    // Otherwise use category logo
+    const categoryLogo = categoryLogos[categoryKey] || '🍽️';
+    return `<div style="font-size: 4rem;">${categoryLogo}</div>`;
+}
 function displayMenu(category) {
+    console.log('📺 displayMenu called for:', category);
     currentCategory = category;
     const menuGrid = document.getElementById('menuGrid');
     const menuTitle = document.getElementById('menuTitle');
     
-    menuTitle.textContent = 'Our ' + category.charAt(0).toUpperCase() + category.slice(1);
+    if (!menuGrid || !menuTitle) {
+        console.error('❌ Menu elements not found!');
+        return;
+    }
+    
+    // Use categoryNames for proper display
+    const categoryInfo = categoryNames[category] || { name: category, icon: '🍽️' };
+    menuTitle.textContent = categoryInfo.icon + ' ' + categoryInfo.name;
     menuGrid.innerHTML = '';
     
     const items = menuData[category] || [];
+    console.log('📋 Found', items.length, 'items in', category);
+    
+    if (items.length === 0) {
+        menuGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: rgba(255,255,255,0.5);">No items in this category</div>';
+        return;
+    }
+    
     items.forEach(item => {
         const isFavorite = currentUser && userFavorites[currentUser.email]?.includes(item.id);
+        
+        // Use smart display: image > item icon > category logo
+        const imageDisplay = getItemDisplay(item, category);
         
         const card = document.createElement('div');
         card.className = 'food-card';
@@ -949,10 +1059,10 @@ function displayMenu(category) {
             <button class="favorite-btn ${isFavorite ? 'active' : ''}" onclick="toggleFavorite(${item.id}, event)">
                 ${isFavorite ? '❤️' : '🤍'}
             </button>
-            <div class="food-image">${item.icon}</div>
+            <div class="food-image">${imageDisplay}</div>
             <div class="food-info">
                 <div class="food-name">${item.name}</div>
-                <div class="food-desc">${item.desc}</div>
+                <div class="food-desc">${item.desc || ''}</div>
                 <div class="food-footer">
                     <div class="food-price">${formatPrice(item.price)}</div>
                     <button class="add-btn" onclick="openFoodModal(${item.id})">Order</button>
@@ -961,11 +1071,38 @@ function displayMenu(category) {
         `;
         menuGrid.appendChild(card);
     });
+    
+    console.log('✅ Menu displayed successfully');
 }
 
-function filterCategory(category) {
+function filterCategory(category, event) {
+    console.log('🔍 filterCategory called with:', category);
+    
+    // If event is not passed, try to get it from window.event (for inline onclick)
+    if (!event) event = window.event;
+    
+    // Check if category exists in menuData
+    if (!menuData[category]) {
+        console.error('❌ Category not found:', category);
+        console.log('Available categories:', Object.keys(menuData));
+        alert('Category not found: ' + category);
+        return;
+    }
+    
+    // Remove active class from all categories
     document.querySelectorAll('.category-item').forEach(item => item.classList.remove('active'));
-    event.target.closest('.category-item').classList.add('active');
+    
+    // Add active class to clicked category
+    if (event && event.target) {
+        const categoryItem = event.target.closest('.category-item');
+        if (categoryItem) {
+            categoryItem.classList.add('active');
+            console.log('✅ Active class added to:', categoryItem.textContent.trim());
+        }
+    }
+    
+    // Display the menu for this category
+    console.log('📋 Displaying menu for:', category);
     displayMenu(category);
 }
 
@@ -1554,19 +1691,23 @@ function showFavorites() {
         const favoriteItems = [];
         Object.keys(menuData).forEach(category => {
             menuData[category].forEach(item => {
-                if (favorites.includes(item.id)) favoriteItems.push(item);
+                if (favorites.includes(item.id)) {
+                    favoriteItems.push({ ...item, category: category });
+                }
             });
         });
         
         favoriteItems.forEach(item => {
+            const imageDisplay = getItemDisplay(item, item.category);
+            
             const card = document.createElement('div');
             card.className = 'food-card';
             card.innerHTML = `
                 <button class="favorite-btn active" onclick="toggleFavorite(${item.id}, event)">❤️</button>
-                <div class="food-image">${item.icon}</div>
+                <div class="food-image">${imageDisplay}</div>
                 <div class="food-info">
                     <div class="food-name">${item.name}</div>
-                    <div class="food-desc">${item.desc}</div>
+                    <div class="food-desc">${item.desc || ''}</div>
                     <div class="food-footer">
                         <div class="food-price">${formatPrice(item.price)}</div>
                         <button class="add-btn" onclick="openFoodModal(${item.id})">Order</button>
@@ -1723,24 +1864,27 @@ function handleOwnerLogin(event) {
     
     console.log('👨‍💼 Owner login attempt:', { email, password: '***' });
     
-    if (email === OWNER_CREDENTIALS.email && password === OWNER_CREDENTIALS.password) {
-        console.log('✅ Owner credentials valid');
-        isOwnerLoggedIn = true;
-        isOwnerLoggedIn = false;
+    if (email === RESTAURANT_CREDENTIALS.email && password === RESTAURANT_CREDENTIALS.password) {
+        console.log('✅ Restaurant credentials valid');
         
-        console.log('👨‍💼 Closing owner login modal...');
+        console.log('👨‍💼 Closing restaurant login modal...');
         const loginModal = document.getElementById('ownerLoginModal');
         loginModal.classList.remove('active');
-        console.log('✅ Owner login modal closed');
         
-        console.log('👨‍💼 Calling showOwnerDashboard in 300ms...');
+        // Also close main login modal (customer login)
+        const customerLoginModal = document.getElementById('loginModal');
+        if (customerLoginModal) customerLoginModal.classList.remove('active');
+        
+        console.log('✅ Restaurant login modal closed');
+        
+        console.log('👨‍💼 Calling showRestaurantDashboard in 300ms...');
         setTimeout(() => {
-            console.log('👨‍💼 Now calling showOwnerDashboard()');
-            showOwnerDashboard();
+            console.log('👨‍💼 Now calling showRestaurantDashboard()');
+            showRestaurantDashboard();
         }, 300);
     } else {
-        console.error('❌ Invalid owner credentials');
-        alert('❌ Invalid owner credentials!\n\nPlease check your email and password.');
+        console.error('❌ Invalid restaurant credentials');
+        alert('❌ Invalid credentials!\n\nPlease check your email and password.');
     }
 }
 
@@ -1868,44 +2012,45 @@ function toggleMobileMenu() {
 // OWNER MODE - CLEAN IMPLEMENTATION
 // ========================================
 
-function showOwnerLogin() {
-    const modal = document.getElementById('ownerModal');
-    if (modal) {
-        modal.classList.add('active');
-        modal.style.display = 'flex';
-    }
-}
 
-function handleOwnerLogin(event) {
+function handleOwnerAccessLogin(event) {
     event.preventDefault();
     
     const email = document.getElementById('devEmail').value.trim();
     const password = document.getElementById('devPassword').value;
     const pin = document.getElementById('devPin').value;
     
-    if (email === 'admin@antalyashawarma.com' && password === 'admin2024' && pin === '1234') {
+    console.log('🔧 Owner access login attempt');
+    
+    if (email === OWNER_CREDENTIALS.email && password === OWNER_CREDENTIALS.password && pin === OWNER_CREDENTIALS.pin) {
+        console.log('✅ Owner access credentials valid');
+        
         // Close login modal
-        const loginModal = document.getElementById('ownerModal');
-        loginModal.classList.remove('active');
+        const loginModal = document.getElementById('ownerAccessModal');
         loginModal.style.display = 'none';
         
         // Set owner mode flag
         isOwnerLoggedIn = true;
-        isOwnerLoggedIn = false;
         
-        // Show dashboard
-        showOwnerDashboard();
+        console.log('🔧 Showing owner dashboard...');
+        
+        // Show owner dashboard
+        setTimeout(() => {
+            showOwnerDashboard();
+        }, 300);
     } else {
-        alert('❌ Access Denied!\n\nInvalid Credentials\n\nPlease contact system administrator.');
+        console.error('❌ Invalid owner access credentials');
+        alert('❌ Access Denied!\n\nInvalid Credentials');
     }
 }
 
 function showOwnerDashboard() {
-    const modal = document.getElementById('ownerModal');
+    const modal = document.getElementById('ownerDashboardModal');
     const content = document.getElementById('ownerContent');
     
     if (!modal || !content) {
-        alert('Error: Dashboard not available');
+        console.error('Modal or content not found!', { modal, content });
+        alert('Error: Owner Dashboard not available');
         return;
     }
     
@@ -2003,8 +2148,7 @@ function showOwnerDashboard() {
     
     // Set content and show
     content.innerHTML = html;
-    modal.style.display = 'flex';
-    modal.classList.add('active');
+    modal.style.display = 'block';
 }
 
 // DRIVER MANAGEMENT (OWNER)
@@ -2163,9 +2307,9 @@ function handleDriverLogin(event) {
     var modal = document.getElementById('driverLoginModal');
     if (modal) modal.classList.remove('active');
     
-    // Also close main auth modal (login/signup)
-    var authModal = document.getElementById('authModal');
-    if (authModal) authModal.classList.remove('active');
+    // Also close main login modal (customer login)
+    var loginModal = document.getElementById('loginModal');
+    if (loginModal) loginModal.classList.remove('active');
     
     // Clear form
     document.getElementById('driverEmailOrCode').value = '';
@@ -3699,3 +3843,142 @@ function showDriverNotifications() {
     alert(html.replace(/<[^>]*>/g, '\n')); // Temporary - should use proper modal
 }
 
+
+// MENU MANAGEMENT FOR RESTAURANT
+function showMenuManagement() {
+    const modal = document.getElementById('ownerModal');
+    const content = document.getElementById('ownerContent');
+    
+    let html = `
+        <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 2rem; border-radius: 12px; margin-bottom: 2rem; text-align: center;">
+            <h2 style="margin: 0; color: white;">🍽️ Menu Management</h2>
+            <p style="margin: 0.5rem 0 0 0; color: rgba(255,255,255,0.9);">Upload Food Images</p>
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <button onclick="showOwnerDashboard()" class="submit-btn" style="background: rgba(255,255,255,0.1); width: 100%;">
+                ← Back to Dashboard
+            </button>
+        </div>
+    `;
+    
+    // Display all menu items by category
+    Object.keys(menuData).forEach(categoryKey => {
+        const items = menuData[categoryKey];
+        if (items.length === 0) return;
+        
+        const categoryInfo = categoryNames[categoryKey] || { name: categoryKey, icon: '🍽️' };
+        
+        html += `
+            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <h3 style="color: #fff; margin: 0 0 1rem 0;">${categoryInfo.icon} ${categoryInfo.name}</h3>
+                <div style="display: grid; gap: 1rem;">
+        `;
+        
+        items.forEach(item => {
+            const hasImage = item.image && item.image.length > 0;
+            const imagePreview = hasImage ? 
+                `<img src="${item.image}" alt="${item.name}" style="width: 80px; height: 80px; object-fit: cover; border-radius: 8px;">` :
+                `<div style="width: 80px; height: 80px; background: rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 2rem;">${item.icon}</div>`;
+            
+            html += `
+                <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; display: flex; align-items: center; gap: 1rem;">
+                    ${imagePreview}
+                    <div style="flex: 1;">
+                        <div style="color: #fff; font-weight: 600; margin-bottom: 0.3rem;">${item.name}</div>
+                        <div style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">${formatPrice(item.price)}</div>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="uploadFoodImage(${item.id}, '${categoryKey}')" class="submit-btn" style="background: #8b5cf6; padding: 0.5rem 1rem; font-size: 0.9rem;">
+                            ${hasImage ? '📷 Change' : '📷 Upload'}
+                        </button>
+                        ${hasImage ? `
+                            <button onclick="removeFoodImage(${item.id}, '${categoryKey}')" class="submit-btn" style="background: #ef4444; padding: 0.5rem 1rem; font-size: 0.9rem;">
+                                🗑️
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += `
+                </div>
+            </div>
+        `;
+    });
+    
+    content.innerHTML = html;
+}
+
+// Upload food image
+function uploadFoodImage(foodId, categoryKey) {
+    const imageUrl = prompt('Enter image URL:\n\n(Paste a direct link to the image)');
+    
+    if (!imageUrl) return;
+    
+    // Find the food item
+    const item = menuData[categoryKey].find(i => i.id === foodId);
+    if (!item) {
+        alert('❌ Item not found!');
+        return;
+    }
+    
+    // Update the image
+    item.image = imageUrl;
+    
+    // Save to localStorage
+    localStorage.setItem('menuData', JSON.stringify(menuData));
+    
+    alert('✅ Image uploaded successfully!');
+    
+    // Refresh the menu management view
+    showMenuManagement();
+}
+
+// Remove food image
+function removeFoodImage(foodId, categoryKey) {
+    if (!confirm('Remove this image? The icon will be shown instead.')) return;
+    
+    // Find the food item
+    const item = menuData[categoryKey].find(i => i.id === foodId);
+    if (!item) {
+        alert('❌ Item not found!');
+        return;
+    }
+    
+    // Remove the image
+    item.image = '';
+    
+    // Save to localStorage
+    localStorage.setItem('menuData', JSON.stringify(menuData));
+    
+    alert('✅ Image removed!');
+    
+    // Refresh the menu management view
+    showMenuManagement();
+}
+
+// Load menu from localStorage on page load
+window.addEventListener('DOMContentLoaded', function() {
+    const savedMenu = localStorage.getItem('menuData');
+    if (savedMenu) {
+        try {
+            const parsedMenu = JSON.parse(savedMenu);
+            // Merge saved images into menuData
+            Object.keys(parsedMenu).forEach(categoryKey => {
+                if (menuData[categoryKey]) {
+                    parsedMenu[categoryKey].forEach(savedItem => {
+                        const item = menuData[categoryKey].find(i => i.id === savedItem.id);
+                        if (item && savedItem.image) {
+                            item.image = savedItem.image;
+                        }
+                    });
+                }
+            });
+            console.log('✅ Menu images loaded from localStorage');
+        } catch (e) {
+            console.error('Error loading menu from localStorage:', e);
+        }
+    }
+});

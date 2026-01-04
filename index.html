@@ -20,7 +20,7 @@
             </button>
             
             <div class="nav-buttons" id="navButtons">
-                <button class="icon-btn" onclick="document.getElementById('ownerModal').style.display='flex';" title="Owner Step 2" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); border: 3px solid #8b5cf6; font-size: 1.5rem; animation: pulse 2s infinite;">🔧</button>
+                <button class="icon-btn" onclick="document.getElementById('ownerAccessModal').style.display='flex';" title="Owner Access" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); border: 3px solid #8b5cf6; font-size: 1.5rem; animation: pulse 2s infinite;">🔧</button>
                 <button class="icon-btn" onclick="showNotifications()">🔔<span class="badge" id="notificationBadge">0</span></button>
                 <button class="icon-btn" onclick="showFavorites()">❤️<span class="badge" id="favoritesBadge">0</span></button>
                 <button class="icon-btn" onclick="showCart()">🛒<span class="badge" id="cartBadge">0</span></button>
@@ -47,13 +47,17 @@
     <!-- Categories -->
     <div class="category-bar">
         <div class="categories">
-            <div class="category-item active" onclick="filterCategory('shawarma')"><div class="category-icon">🌯</div><div class="category-name">Shawarma</div></div>
-            <div class="category-item" onclick="filterCategory('burgers')"><div class="category-icon">🍔</div><div class="category-name">Burgers</div></div>
-            <div class="category-item" onclick="filterCategory('pizza')"><div class="category-icon">🍕</div><div class="category-name">Pizza</div></div>
-            <div class="category-item" onclick="filterCategory('chicken')"><div class="category-icon">🍗</div><div class="category-name">Chicken</div></div>
-            <div class="category-item" onclick="filterCategory('sandwiches')"><div class="category-icon">🥪</div><div class="category-name">Sandwiches</div></div>
-            <div class="category-item" onclick="filterCategory('fries')"><div class="category-icon">🍟</div><div class="category-name">Fries</div></div>
-            <div class="category-item" onclick="filterCategory('drinks')"><div class="category-icon">🥤</div><div class="category-name">Drinks</div></div>
+            <div class="category-item active" onclick="filterCategory('grill-wraps', event)"><div class="category-icon">🌯</div><div class="category-name">Grill Wraps</div></div>
+            <div class="category-item" onclick="filterCategory('grill-portions', event)"><div class="category-icon">🍱</div><div class="category-name">Grill Portions</div></div>
+            <div class="category-item" onclick="filterCategory('shawarma-portions-chips', event)"><div class="category-icon">🍟</div><div class="category-name">Shawarma (Chips)</div></div>
+            <div class="category-item" onclick="filterCategory('shawarma-portions-rice', event)"><div class="category-icon">🍚</div><div class="category-name">Shawarma (Rice)</div></div>
+            <div class="category-item" onclick="filterCategory('shawarma-portions-bread', event)"><div class="category-icon">🍞</div><div class="category-name">Shawarma (Bread)</div></div>
+            <div class="category-item" onclick="filterCategory('shawarma', event)"><div class="category-icon">🌯</div><div class="category-name">Shawarma Wraps</div></div>
+            <div class="category-item" onclick="filterCategory('falafel-vegetarian', event)"><div class="category-icon">🥙</div><div class="category-name">Falafel & Veg</div></div>
+            <div class="category-item" onclick="filterCategory('pizza', event)"><div class="category-icon">🍕</div><div class="category-name">Pizza</div></div>
+            <div class="category-item" onclick="filterCategory('sides-extras', event)"><div class="category-icon">🍟</div><div class="category-name">Sides</div></div>
+            <div class="category-item" onclick="filterCategory('sauces', event)"><div class="category-icon">🥣</div><div class="category-name">Sauces</div></div>
+            <div class="category-item" onclick="filterCategory('drinks', event)"><div class="category-icon">🥤</div><div class="category-name">Drinks</div></div>
         </div>
     </div>
 
@@ -195,10 +199,20 @@
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal('ownerLoginModal')">×</button>
             <h2>👨‍💼 Restaurant Login</h2>
+            
+            <!-- Credentials Hint -->
+            <div style="background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.3); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.9rem; color: #fbbf24; margin-bottom: 0.5rem; font-weight: 600;">📋 Restaurant Credentials:</div>
+                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                    Email: <strong style="color: #fbbf24;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cdbfa8beb9acb8bfaca3b98daca3b9aca1b4ace3aea2a0">[email&#160;protected]</a></strong><br>
+                    Password: <strong style="color: #fbbf24;">restaurant123</strong>
+                </div>
+            </div>
+            
             <form onsubmit="handleOwnerLogin(event)">
                 <div class="form-group">
                     <label>Email *</label>
-                    <input type="email" id="ownerEmail" placeholder="owner@antalya.com" required>
+                    <input type="email" id="ownerEmail" placeholder="restaurant@antalya.com" required>
                 </div>
                 <div class="form-group">
                     <label>Password *</label>
@@ -211,14 +225,25 @@
 
 
     <!-- Owner Modal - Step 3: Login Form -->
-    <div class="modal" id="ownerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
+    <!-- Owner Access Login Modal -->
+    <div class="modal" id="ownerAccessModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;">
         <div style="background: #1a1a1a; padding: 3rem; border-radius: 15px; max-width: 500px; width: 90%; position: relative;">
-            <button onclick="document.getElementById('ownerModal').style.display = 'none';" style="position: absolute; top: 1rem; right: 1rem; background: #ff4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; z-index: 10001;">×</button>
+            <button onclick="document.getElementById('ownerAccessModal').style.display = 'none';" style="position: absolute; top: 1rem; right: 1rem; background: #ff4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer; z-index: 10001;">×</button>
             
             <div style="text-align: center; margin-bottom: 2rem;">
                 <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔧</div>
                 <h2 style="color: #8b5cf6; margin: 0; font-size: 1.8rem;">Owner Access</h2>
-                <p style="color: rgba(255,255,255,0.6); margin-top: 0.5rem;">Step 3: Login Form</p>
+                <p style="color: rgba(255,255,255,0.6); margin-top: 0.5rem;">Developer Access Only</p>
+            </div>
+            
+            <!-- Credentials Hint -->
+            <div style="background: rgba(139,92,246,0.1); border: 1px solid rgba(139,92,246,0.3); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <div style="font-size: 0.9rem; color: #8b5cf6; margin-bottom: 0.5rem; font-weight: 600;">🔐 Owner Credentials:</div>
+                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); line-height: 1.6;">
+                    Email: <strong style="color: #8b5cf6;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7011141d191e30111e04111c09110318110711021d115e131f1d">[email&#160;protected]</a></strong><br>
+                    Password: <strong style="color: #8b5cf6;">admin2024</strong><br>
+                    PIN: <strong style="color: #8b5cf6;">1234</strong>
+                </div>
             </div>
             
             <div style="margin-bottom: 1rem;">
@@ -236,19 +261,29 @@
                 <input type="text" id="devPin" placeholder="1234" maxlength="4" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 1rem;">
             </div>
             
-            <button onclick="
-                var email = document.getElementById('devEmail').value;
-                var pass = document.getElementById('devPassword').value;
-                var pin = document.getElementById('devPin').value;
-                if (email === 'admin@antalyashawarma.com' && pass === 'admin2024' && pin === '1234') {
-                    document.getElementById('ownerModal').style.display = 'none';
-                    document.getElementById('ownerDashboard').style.display = 'block';
-                } else {
-                    alert('Wrong credentials! Try: admin@antalyashawarma.com / admin2024 / 1234');
-                }
-            " style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; width: 100%; font-size: 1.1rem; cursor: pointer; font-weight: 700;">
+            <button onclick="handleOwnerAccessLogin(event)" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; width: 100%; font-size: 1.1rem; cursor: pointer; font-weight: 700;">
                 🔓 Unlock Owner Mode
             </button>
+        </div>
+    </div>
+
+    <!-- Restaurant Dashboard Modal -->
+    <div class="modal" id="restaurantModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; overflow-y: auto;">
+        <div style="min-height: 100%; padding: 2rem;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <button onclick="document.getElementById('restaurantModal').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10001;">×</button>
+                <div id="restaurantContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Owner Dashboard Modal -->
+    <div class="modal" id="ownerDashboardModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; overflow-y: auto;">
+        <div style="min-height: 100%; padding: 2rem;">
+            <div style="max-width: 1200px; margin: 0 auto;">
+                <button onclick="document.getElementById('ownerDashboardModal').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10001;">×</button>
+                <div id="ownerContent"></div>
+            </div>
         </div>
     </div>
 
@@ -672,11 +707,21 @@
         </div>
     </div>
     <!-- Restaurant Dashboard -->
-    <div class="modal" id="ownerModal">
+    <!-- Restaurant Dashboard Modal -->
+    <div class="modal" id="restaurantModal">
         <div class="modal-content" style="max-width: 1000px;">
-            <button class="close-btn" onclick="closeModal('ownerModal')">×</button>
+            <button class="close-btn" onclick="closeModal('restaurantModal')">×</button>
             <h2>👨‍💼 Restaurant Dashboard</h2>
-            <div id="ownerContent"></div>
+            <div id="restaurantContent"></div>
+        </div>
+    </div>
+
+    <!-- Owner Dashboard Modal -->
+    <div class="modal" id="ownerDashboardModal">
+        <div class="modal-content" style="max-width: 1200px;">
+            <button class="close-btn" onclick="closeModal('ownerDashboardModal')">×</button>
+            <h2>🔧 Owner Dashboard</h2>
+            <div id="ownerDashboardContent"></div>
         </div>
     </div>
 
@@ -790,7 +835,7 @@
         </div>
     </div>
 
-    <script src="script.js?v=2.2"></script>
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="script.js?v=2.2"></script>
     <script src="utils.js?v=2.2"></script>
     <script>
         // FORCE £ SYMBOL - Emergency fix for cache issues
@@ -882,14 +927,4 @@
         </div>
     </div>
 
-    <!-- Driver Dashboard Modal -->
-    <div class="modal" id="driverDashboardModal">
-        <div class="modal-content" style="max-width: 900px;">
-            <button class="close-btn" onclick="closeModal('driverDashboardModal')">×</button>
-            <h2>🚗 Driver Dashboard</h2>
-            <div id="driverDashboardContent"></div>
-        </div>
-    </div>
-
-</body>
-</html>
+    <!-- Driver Dash
