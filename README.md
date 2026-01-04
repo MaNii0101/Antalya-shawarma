@@ -1,2 +1,0 @@
-# Antalya-shawarma
-Restaurant 
