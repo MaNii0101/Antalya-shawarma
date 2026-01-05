@@ -236,17 +236,17 @@
                 <p style="margin: 1rem 0 0; font-size: 1.1rem; opacity: 0.95;">Order Management System</p>
             </div>
             
-            <!-- Stats -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <!-- Stats - Monthly Data Only (No Total Revenue for Staff) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                 <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💰</div>
-                    <div id="todayRevenueStat" style="font-size: 1.8rem; font-weight: 700;">£0.00</div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">Today's Revenue</div>
+                    <div id="monthlyRevenueStat" style="font-size: 1.8rem; font-weight: 700;">£0.00</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Monthly Revenue</div>
                 </div>
                 <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦</div>
-                    <div id="todayOrdersStat" style="font-size: 1.8rem; font-weight: 700;">0</div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">Today's Orders</div>
+                    <div id="monthlyOrdersStat" style="font-size: 1.8rem; font-weight: 700;">0</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Monthly Orders</div>
                 </div>
                 <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏳</div>
@@ -257,11 +257,6 @@
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
                     <div id="completedOrdersStat" style="font-size: 1.8rem; font-weight: 700;">0</div>
                     <div style="font-size: 0.9rem; opacity: 0.9;">Completed</div>
-                </div>
-                <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
-                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📊</div>
-                    <div id="totalRevenueStat" style="font-size: 1.8rem; font-weight: 700;">£0.00</div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">Total Revenue</div>
                 </div>
             </div>
             
@@ -362,13 +357,13 @@
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                <button onclick="alert('Driver Management - Use the modal system')" style="padding: 2.5rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <button onclick="showDriverManagementModal()" style="padding: 2.5rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
                     <span style="font-size: 3rem;">🚗</span>
                     <span>Driver Management</span>
                     <span id="driversRegisteredText" style="font-size: 0.85rem; opacity: 0.9; font-weight: 400;">3 drivers registered</span>
                 </button>
                 
-                <button onclick="alert('Bank Settings would open here')" style="padding: 2.5rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                <button onclick="showBankSettingsModal()" style="padding: 2.5rem; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
                     <span style="font-size: 3rem;">🏦</span>
                     <span>Bank Settings</span>
                     <span style="font-size: 0.85rem; opacity: 0.9; font-weight: 400;">Payment configuration</span>
@@ -385,6 +380,168 @@
                 <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
                 <h2 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.8rem;">Owner Access Active</h2>
                 <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 1.05rem;">All system features and controls are now available</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRIVER MANAGEMENT MODAL (OWNER ONLY) - COMPLETE -->
+    <div class="modal" id="driverManagementModal" style="display: none; z-index: 10002;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <button class="close-btn" onclick="closeModal('driverManagementModal')">×</button>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 4rem; margin-bottom: 0.5rem;">🚗</div>
+                <h2 style="color: #10b981;">Driver Management</h2>
+                <p style="color: rgba(255,255,255,0.6);">Manage delivery drivers</p>
+            </div>
+            
+            <!-- Add New Driver Form -->
+            <div style="background: rgba(16,185,129,0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid rgba(16,185,129,0.3);">
+                <h3 style="color: #10b981; margin: 0 0 1rem 0; font-size: 1.1rem;">➕ Add New Driver</h3>
+                
+                <!-- Profile Picture -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div id="newDriverPicPreview" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.1); margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; border: 3px solid rgba(16,185,129,0.5);">🚗</div>
+                    <input type="file" id="newDriverPicInput" accept="image/*" style="display: none;" onchange="previewDriverPic(this)">
+                    <button type="button" onclick="document.getElementById('newDriverPicInput').click()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.3rem 0.8rem; border-radius: 15px; cursor: pointer; font-size: 0.8rem;">📷 Photo</button>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Full Name *</label>
+                        <input type="text" id="newDriverName" placeholder="Driver full name" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Email *</label>
+                        <input type="email" id="newDriverEmail" placeholder="driver@email.com" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Phone *</label>
+                        <input type="tel" id="newDriverPhone" placeholder="+44 7XXX XXX XXX" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Password *</label>
+                        <input type="password" id="newDriverPassword" placeholder="Login password" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Date of Birth</label>
+                        <input type="date" id="newDriverBirth" style="width: 100%;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Gender</label>
+                        <select id="newDriverGender" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white;">
+                            <option value="">Select Gender</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="addNewDriver()" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; margin-top: 1rem; font-size: 1rem;">➕ Add Driver</button>
+            </div>
+            
+            <!-- Driver List -->
+            <div id="driverListContainer">
+                <!-- Drivers will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT DRIVER MODAL -->
+    <div class="modal" id="editDriverModal" style="display: none; z-index: 10003;">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-btn" onclick="closeModal('editDriverModal')">×</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">✏️</div>
+                <h2 style="color: #3b82f6;">Edit Driver</h2>
+            </div>
+            
+            <input type="hidden" id="editDriverId">
+            
+            <!-- Profile Picture -->
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div id="editDriverPicPreview" style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.1); margin: 0 auto 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; border: 3px solid rgba(59,130,246,0.5);">🚗</div>
+                <input type="file" id="editDriverPicInput" accept="image/*" style="display: none;" onchange="previewEditDriverPic(this)">
+                <button type="button" onclick="document.getElementById('editDriverPicInput').click()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.3rem 0.8rem; border-radius: 15px; cursor: pointer; font-size: 0.8rem;">📷 Change Photo</button>
+            </div>
+            
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="editDriverName" placeholder="Driver name">
+            </div>
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="editDriverEmail" placeholder="Email">
+            </div>
+            <div class="form-group">
+                <label>Phone *</label>
+                <input type="tel" id="editDriverPhone" placeholder="Phone">
+            </div>
+            <div class="form-group">
+                <label>New Password (leave empty to keep current)</label>
+                <input type="password" id="editDriverPassword" placeholder="New password">
+            </div>
+            <div class="form-group">
+                <label>Date of Birth</label>
+                <input type="date" id="editDriverBirth">
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select id="editDriverGender" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white;">
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select id="editDriverStatus" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white;">
+                    <option value="active">🟢 Active</option>
+                    <option value="inactive">🔴 Inactive</option>
+                </select>
+            </div>
+            <button onclick="saveDriverChanges()" class="submit-btn" style="background: linear-gradient(45deg, #3b82f6, #2563eb);">💾 Save Changes</button>
+        </div>
+    </div>
+
+    <!-- BANK SETTINGS MODAL (OWNER ONLY) -->
+    <div class="modal" id="bankSettingsModal" style="display: none; z-index: 10002;">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-btn" onclick="closeModal('bankSettingsModal')">×</button>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 4rem; margin-bottom: 0.5rem;">🏦</div>
+                <h2 style="color: #f59e0b;">Bank Settings</h2>
+                <p style="color: rgba(255,255,255,0.6);">Payment configuration</p>
+            </div>
+            
+            <form onsubmit="saveBankSettings(event)">
+                <div class="form-group">
+                    <label>Bank Name *</label>
+                    <input type="text" id="bankName" placeholder="e.g., Barclays Bank UK" required>
+                </div>
+                <div class="form-group">
+                    <label>Account Holder Name *</label>
+                    <input type="text" id="accountHolder" placeholder="Business name" required>
+                </div>
+                <div class="form-group">
+                    <label>Account Number *</label>
+                    <input type="text" id="accountNumber" placeholder="8-digit account number" maxlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>Sort Code *</label>
+                    <input type="text" id="sortCode" placeholder="XX-XX-XX" maxlength="8" required>
+                </div>
+                <div class="form-group">
+                    <label>IBAN (Optional)</label>
+                    <input type="text" id="iban" placeholder="GB00 XXXX 0000 0000 0000 00">
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #f59e0b, #d97706);">💾 Save Bank Details</button>
+            </form>
+            
+            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(245,158,11,0.1); border-radius: 10px; border: 1px solid rgba(245,158,11,0.3);">
+                <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin: 0;">
+                    🔒 Your bank details are stored securely and used only for receiving customer payments.
+                </p>
             </div>
         </div>
     </div>
@@ -421,12 +578,110 @@
         </div>
     </div>
 
-    <!-- ACCOUNT MODAL -->
+    <!-- ACCOUNT MODAL - FULL PROFILE EDITING -->
     <div class="modal" id="accountModal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width: 600px;">
             <button class="close-btn" onclick="closeModal('accountModal')">×</button>
-            <h2>👤 My Account</h2>
-            <div id="accountContent"></div>
+            <div id="accountContent">
+                <!-- Will be rendered by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT PROFILE MODAL -->
+    <div class="modal" id="editProfileModal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-btn" onclick="closeModal('editProfileModal')">×</button>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">✏️</div>
+                <h2 style="color: #3b82f6;">Edit Profile</h2>
+            </div>
+            
+            <!-- Profile Picture Upload -->
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div id="profilePicPreview" style="width: 120px; height: 120px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 3rem; overflow: hidden; border: 4px solid rgba(255,255,255,0.2);">
+                    👤
+                </div>
+                <input type="file" id="profilePicInput" accept="image/*" style="display: none;" onchange="previewProfilePic(this)">
+                <button onclick="document.getElementById('profilePicInput').click()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; font-size: 0.9rem;">📷 Change Photo</button>
+            </div>
+            
+            <form onsubmit="saveProfileChanges(event)">
+                <div class="form-group">
+                    <label>Full Name *</label>
+                    <input type="text" id="editName" placeholder="Your full name" required>
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" id="editAge" placeholder="Your age" min="13" max="120">
+                </div>
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="editPhone" placeholder="+44 7XXX XXX XXX" required>
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" id="editAddress" placeholder="Your delivery address">
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #3b82f6, #2563eb);">💾 Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CHANGE EMAIL MODAL (WITH SECURITY) -->
+    <div class="modal" id="changeEmailModal" style="display: none;">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="close-btn" onclick="closeModal('changeEmailModal')">×</button>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">📧</div>
+                <h2 style="color: #f59e0b;">Change Email</h2>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">For security, please verify your password</p>
+            </div>
+            
+            <form onsubmit="verifyAndChangeEmail(event)">
+                <div class="form-group">
+                    <label>Current Password *</label>
+                    <input type="password" id="emailCurrentPassword" placeholder="Enter current password" required>
+                </div>
+                <div class="form-group">
+                    <label>New Email *</label>
+                    <input type="email" id="newEmail" placeholder="new@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Email *</label>
+                    <input type="email" id="confirmNewEmail" placeholder="Confirm new email" required>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #f59e0b, #d97706);">🔐 Verify & Change Email</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL (WITH SECURITY) -->
+    <div class="modal" id="changePasswordModal" style="display: none;">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="close-btn" onclick="closeModal('changePasswordModal')">×</button>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔒</div>
+                <h2 style="color: #ef4444;">Change Password</h2>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Create a strong password to protect your account</p>
+            </div>
+            
+            <form onsubmit="verifyAndChangePassword(event)">
+                <div class="form-group">
+                    <label>Current Password *</label>
+                    <input type="password" id="currentPassword" placeholder="Enter current password" required>
+                </div>
+                <div class="form-group">
+                    <label>New Password *</label>
+                    <input type="password" id="newPassword" placeholder="Min 6 characters" minlength="6" required>
+                    <small style="color: rgba(255,255,255,0.5);">Minimum 6 characters</small>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password *</label>
+                    <input type="password" id="confirmNewPassword" placeholder="Confirm new password" required>
+                </div>
+                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #ef4444, #dc2626);">🔐 Change Password</button>
+            </form>
         </div>
     </div>
 
@@ -493,8 +748,58 @@
         </div>
     </div>
 
+    <!-- LOCATION CONFIRMATION MODAL -->
+    <div class="modal" id="locationConfirmModal" style="display: none; z-index: 10002;">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="close-btn" onclick="closeModal('locationConfirmModal')">×</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 4rem; margin-bottom: 0.5rem;">📍</div>
+                <h2 style="color: #3b82f6;">Confirm Delivery Location</h2>
+            </div>
+            
+            <div id="currentLocationDisplay" style="background: rgba(59,130,246,0.1); padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; border: 1px solid rgba(59,130,246,0.3);">
+                <p style="color: rgba(255,255,255,0.6); margin: 0 0 0.5rem; font-size: 0.9rem;">Current delivery address:</p>
+                <p id="confirmLocationAddress" style="color: white; margin: 0; font-weight: 600; font-size: 1.1rem;"></p>
+            </div>
+            
+            <div style="display: grid; gap: 1rem;">
+                <button onclick="confirmCurrentLocation()" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 1.2rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                    ✅ Use This Location
+                </button>
+                <button onclick="changeDeliveryLocation()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600;">
+                    📍 Change Location
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REORDER CONFIRMATION MODAL -->
+    <div class="modal" id="reorderModal" style="display: none; z-index: 10002;">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-btn" onclick="closeModal('reorderModal')">×</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 4rem; margin-bottom: 0.5rem;">🔄</div>
+                <h2 style="color: #10b981;">Reorder</h2>
+                <p style="color: rgba(255,255,255,0.6);">Order the same items again?</p>
+            </div>
+            
+            <div id="reorderItemsList" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; max-height: 200px; overflow-y: auto;">
+                <!-- Items will be listed here -->
+            </div>
+            
+            <div id="reorderTotal" style="display: flex; justify-content: space-between; padding: 1rem; background: rgba(16,185,129,0.1); border-radius: 10px; margin-bottom: 1.5rem; font-weight: 700;">
+                <span>Total:</span>
+                <span style="color: #10b981;"></span>
+            </div>
+            
+            <button onclick="confirmReorder()" class="submit-btn" style="background: linear-gradient(45deg, #10b981, #059669);">
+                🛒 Add to Cart & Checkout
+            </button>
+        </div>
+    </div>
+
     <!-- DRIVER LOGIN MODAL -->
-    <div class="modal" id="driverLoginModal">
+    <div class="modal" id="driverLoginModal" style="display: none; z-index: 10002;">
         <div class="modal-content">
             <button class="close-btn" onclick="closeModal('driverLoginModal')">×</button>
             <div style="text-align: center; margin-bottom: 2rem;">
@@ -502,23 +807,59 @@
                 <h2 style="color: #10b981;">Driver Login</h2>
                 <p style="color: rgba(255,255,255,0.6);">Login to access your delivery dashboard</p>
             </div>
-            <form onsubmit="handleDriverLogin(event)">
-                <div class="form-group">
-                    <label>Email or Secret Code *</label>
-                    <input type="text" id="driverEmailOrCode" placeholder="driver@antalya.com or DRV-001-MA" required>
+            
+            <!-- Login with Secret Code -->
+            <div id="driverCodeLogin">
+                <form onsubmit="handleDriverCodeLogin(event)">
+                    <div class="form-group">
+                        <label>Secret Code *</label>
+                        <input type="text" id="driverSecretCode" placeholder="DRV-XXX-XX" style="text-transform: uppercase;">
+                    </div>
+                    <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #10b981, #059669);">🔓 Login with Code</button>
+                </form>
+                
+                <div style="text-align: center; margin: 1.5rem 0; color: rgba(255,255,255,0.5);">
+                    <span style="padding: 0 1rem;">OR</span>
                 </div>
-                <div class="form-group">
-                    <label>Password *</label>
-                    <input type="password" id="driverPassword" placeholder="Enter password" required>
-                </div>
-                <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #10b981, #059669);">🔓 Login</button>
-            </form>
+                
+                <button onclick="showDriverEmailLogin()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 1rem; border-radius: 8px; width: 100%; cursor: pointer; font-weight: 600;">
+                    📧 Login with Email & Password
+                </button>
+            </div>
+            
+            <!-- Login with Email/Password -->
+            <div id="driverEmailLogin" style="display: none;">
+                <form onsubmit="handleDriverEmailPasswordLogin(event)">
+                    <div class="form-group">
+                        <label>Email *</label>
+                        <input type="email" id="driverLoginEmail" placeholder="driver@antalya.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" id="driverLoginPassword" placeholder="Enter your password">
+                    </div>
+                    <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #10b981, #059669);">🔓 Login</button>
+                </form>
+                
+                <button onclick="showDriverCodeLogin()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.8rem; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 1rem;">
+                    ← Back to Code Login
+                </button>
+            </div>
+            
             <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(16,185,129,0.1); border-radius: 10px; border: 1px solid rgba(16,185,129,0.3);">
                 <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin: 0;">
-                    <strong>Demo Driver:</strong><br>
-                    Code: DRV-001-MA<br>
-                    Password: driver123
+                    <strong>💡 Tip:</strong> Use your Secret Code for quick login, or Email & Password for full access.
                 </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRIVER DASHBOARD MODAL -->
+    <div class="modal" id="driverDashboardModal" style="display: none; z-index: 10002;">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <button class="close-btn" onclick="closeModal('driverDashboardModal'); logoutDriver();">×</button>
+            <div id="driverDashboardContent">
+                <!-- Driver dashboard content will be rendered here -->
             </div>
         </div>
     </div>

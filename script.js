@@ -815,12 +815,14 @@ window.driverSystem = {
             phone: '+44 7700 900123',
             password: 'driver123',
             dob: '1990-05-15',
-            gender: 'Male',
+            gender: 'male',
             secretCode: 'DRV-001-MA',
             deliveries: 247,
             rating: 4.9,
-            active: true,
-            photoUrl: null
+            active: true,      // Can login
+            available: true,   // Can receive orders
+            profilePicture: null,
+            currentLocation: null
         },
         'driver-002': {
             id: 'driver-002',
@@ -829,12 +831,14 @@ window.driverSystem = {
             phone: '+44 7700 900124',
             password: 'driver123',
             dob: '1988-08-20',
-            gender: 'Male',
+            gender: 'male',
             secretCode: 'DRV-002-AH',
             deliveries: 189,
             rating: 4.8,
             active: true,
-            photoUrl: null
+            available: true,
+            profilePicture: null,
+            currentLocation: null
         },
         'driver-003': {
             id: 'driver-003',
@@ -843,19 +847,33 @@ window.driverSystem = {
             phone: '+44 7700 900125',
             password: 'driver123',
             dob: '1992-12-10',
-            gender: 'Female',
+            gender: 'female',
             secretCode: 'DRV-003-FK',
             deliveries: 156,
             rating: 4.95,
             active: true,
-            photoUrl: null
+            available: true,
+            profilePicture: null,
+            currentLocation: null
         }
     },
     get: function(id) {
         return this.drivers[id] || null;
     },
+    getByCode: function(code) {
+        return Object.values(this.drivers).find(d => d.secretCode === code.toUpperCase());
+    },
+    getByEmail: function(email) {
+        return Object.values(this.drivers).find(d => d.email === email);
+    },
     getAll: function() {
         return Object.values(this.drivers);
+    },
+    getActive: function() {
+        return Object.values(this.drivers).filter(d => d.active);
+    },
+    getAvailable: function() {
+        return Object.values(this.drivers).filter(d => d.active && d.available);
     },
     add: function(driver) {
         this.drivers[driver.id] = driver;
@@ -1508,6 +1526,12 @@ function proceedToCheckout() {
         return;
     }
     
+    if (!currentUser) {
+        alert('❌ Please login first');
+        showLogin();
+        return;
+    }
+    
     if (!currentUser.address && !selectedLocation) {
         alert('❌ Please set your delivery address first');
         pickLocation();
@@ -1516,6 +1540,33 @@ function proceedToCheckout() {
     
     closeModal('cartModal');
     
+    // Show location confirmation modal first
+    showLocationConfirmation();
+}
+
+function showLocationConfirmation() {
+    const modal = document.getElementById('locationConfirmModal');
+    const addressDisplay = document.getElementById('confirmLocationAddress');
+    
+    if (modal && addressDisplay) {
+        const currentAddress = selectedLocation?.address || currentUser.address || 'No address set';
+        addressDisplay.textContent = currentAddress;
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+}
+
+function confirmCurrentLocation() {
+    closeModal('locationConfirmModal');
+    openCheckoutModal();
+}
+
+function changeDeliveryLocation() {
+    closeModal('locationConfirmModal');
+    pickLocation();
+}
+
+function openCheckoutModal() {
     // Calculate totals
     let subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
     let deliveryFee = 0;
@@ -1575,7 +1626,11 @@ function proceedToCheckout() {
         paymentTotal.textContent = formatPrice(total);
     }
     
-    document.getElementById('checkoutModal').classList.add('active');
+    const checkoutModal = document.getElementById('checkoutModal');
+    if (checkoutModal) {
+        checkoutModal.style.display = 'flex';
+        checkoutModal.classList.add('active');
+    }
 }
 
 function handlePayment(event) {
@@ -1744,11 +1799,24 @@ function showAccount() {
     const userOrders = orderHistory.filter(o => o.userId === currentUser.email);
     const totalSpent = userOrders.reduce((sum, o) => sum + o.total, 0);
     
+    // Profile picture display
+    const profilePic = currentUser.profilePicture 
+        ? `<img src="${currentUser.profilePicture}" style="width: 100%; height: 100%; object-fit: cover;">`
+        : '👤';
+    
     content.innerHTML = `
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="font-size: 3rem; margin-bottom: 0.5rem;">👤</div>
+            <h2 style="color: #ff6b6b; margin: 0;">My Account</h2>
+        </div>
+        
         <div style="background: linear-gradient(135deg, #ff6b6b, #ee5a6f); padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 1.5rem;">
-            <div style="font-size: 4rem; margin-bottom: 0.5rem;">👤</div>
+            <div style="width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; border: 4px solid rgba(255,255,255,0.3);">
+                ${profilePic}
+            </div>
             <h3 style="margin: 0; color: white;">${currentUser.name}</h3>
             <p style="margin: 0.5rem 0 0; color: rgba(255,255,255,0.8);">${currentUser.email}</p>
+            ${currentUser.age ? `<p style="margin: 0.3rem 0 0; color: rgba(255,255,255,0.7); font-size: 0.9rem;">Age: ${currentUser.age}</p>` : ''}
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
@@ -1762,27 +1830,57 @@ function showAccount() {
             </div>
         </div>
         
-        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+        <!-- User Details -->
+        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span style="color: rgba(255,255,255,0.6);">📞 Phone</span>
                 <span>${currentUser.phone || 'Not set'}</span>
             </div>
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                 <span style="color: rgba(255,255,255,0.6);">📍 Address</span>
                 <span>${currentUser.address || 'Not set'}</span>
             </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: rgba(255,255,255,0.6);">📅 Member Since</span>
+                <span>${currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'N/A'}</span>
+            </div>
         </div>
         
-        <h4 style="margin-bottom: 1rem;">Recent Orders</h4>
+        <!-- Edit Buttons -->
+        <div style="display: grid; gap: 0.8rem; margin-bottom: 1.5rem;">
+            <button onclick="openEditProfile()" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                ✏️ Edit Profile
+            </button>
+            <button onclick="openChangeEmail()" style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                📧 Change Email
+            </button>
+            <button onclick="openChangePassword()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                🔒 Change Password
+            </button>
+        </div>
+        
+        <!-- Recent Orders with Reorder -->
+        <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">📦 Order History</h4>
         ${userOrders.length === 0 ? '<p style="color: rgba(255,255,255,0.5); text-align: center;">No orders yet</p>' : 
-            userOrders.slice(0, 5).map(o => `
+            userOrders.slice(0, 10).map(o => `
                 <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 0.8rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="font-weight: 600;">#${o.id}</span>
                         <span style="color: ${o.status === 'completed' ? '#10b981' : o.status === 'pending' ? '#f59e0b' : '#3b82f6'};">${o.status.toUpperCase()}</span>
                     </div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${o.items.length} items • ${formatPrice(o.total)}</div>
-                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4);">${new Date(o.createdAt).toLocaleString()}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.3rem;">${o.items.map(i => i.name).join(', ')}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${o.items.length} items • </span>
+                            <span style="font-weight: 600; color: #10b981;">${formatPrice(o.total)}</span>
+                        </div>
+                        ${o.status === 'completed' ? `
+                            <button onclick="reorderFromHistory('${o.id}')" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                                🔄 Reorder
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 0.3rem;">${new Date(o.createdAt).toLocaleString()}</div>
                 </div>
             `).join('')
         }
@@ -1793,6 +1891,293 @@ function showAccount() {
     `;
     
     modal.classList.add('active');
+}
+
+// ========================================
+// REORDER FUNCTIONS
+// ========================================
+let reorderData = null;
+
+function reorderFromHistory(orderId) {
+    const order = orderHistory.find(o => o.id === orderId);
+    if (!order) {
+        alert('❌ Order not found');
+        return;
+    }
+    
+    reorderData = order;
+    
+    // Show reorder modal
+    const modal = document.getElementById('reorderModal');
+    const itemsList = document.getElementById('reorderItemsList');
+    const totalDisplay = document.getElementById('reorderTotal');
+    
+    if (modal && itemsList && totalDisplay) {
+        itemsList.innerHTML = order.items.map(item => `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <span>${item.icon} ${item.name} x${item.quantity}</span>
+                <span>${formatPrice(item.finalPrice * item.quantity)}</span>
+            </div>
+        `).join('');
+        
+        totalDisplay.querySelector('span:last-child').textContent = formatPrice(order.total);
+        
+        closeModal('accountModal');
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+}
+
+function confirmReorder() {
+    if (!reorderData) return;
+    
+    // Clear current cart
+    cart = [];
+    
+    // Add all items from the order to cart
+    reorderData.items.forEach(item => {
+        cart.push({
+            ...item,
+            addedAt: new Date().toISOString()
+        });
+    });
+    
+    // Save cart
+    if (currentUser) {
+        localStorage.setItem('cart_' + currentUser.email, JSON.stringify(cart));
+    }
+    
+    updateCartBadge();
+    
+    closeModal('reorderModal');
+    
+    // Show location confirmation
+    showLocationConfirmation();
+}
+
+// ========================================
+// PROFILE EDITING FUNCTIONS
+// ========================================
+function openEditProfile() {
+    closeModal('accountModal');
+    
+    const modal = document.getElementById('editProfileModal');
+    if (!modal) return;
+    
+    // Pre-fill form with current data
+    document.getElementById('editName').value = currentUser.name || '';
+    document.getElementById('editAge').value = currentUser.age || '';
+    document.getElementById('editPhone').value = currentUser.phone || '';
+    document.getElementById('editAddress').value = currentUser.address || '';
+    
+    // Show profile picture
+    const preview = document.getElementById('profilePicPreview');
+    if (currentUser.profilePicture) {
+        preview.innerHTML = `<img src="${currentUser.profilePicture}" style="width: 100%; height: 100%; object-fit: cover;">`;
+    } else {
+        preview.innerHTML = '👤';
+    }
+    
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+}
+
+function previewProfilePic(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('profilePicPreview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            // Store temporarily
+            preview.dataset.newPic = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function saveProfileChanges(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('editName').value.trim();
+    const age = document.getElementById('editAge').value;
+    const phone = document.getElementById('editPhone').value.trim();
+    const address = document.getElementById('editAddress').value.trim();
+    const preview = document.getElementById('profilePicPreview');
+    const newPic = preview.dataset.newPic;
+    
+    if (!name) {
+        alert('❌ Name is required');
+        return;
+    }
+    
+    // Update current user
+    currentUser.name = name;
+    currentUser.age = age ? parseInt(age) : null;
+    currentUser.phone = phone;
+    currentUser.address = address;
+    
+    if (newPic) {
+        currentUser.profilePicture = newPic;
+    }
+    
+    // Update in database
+    const userIndex = userDatabase.findIndex(u => u.email === currentUser.email);
+    if (userIndex !== -1) {
+        userDatabase[userIndex] = { ...userDatabase[userIndex], ...currentUser };
+    }
+    
+    // Save
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    saveData();
+    
+    closeModal('editProfileModal');
+    showAccount();
+    
+    alert('✅ Profile updated successfully!');
+}
+
+function openChangeEmail() {
+    closeModal('accountModal');
+    
+    const modal = document.getElementById('changeEmailModal');
+    if (modal) {
+        // Clear form
+        document.getElementById('emailCurrentPassword').value = '';
+        document.getElementById('newEmail').value = '';
+        document.getElementById('confirmNewEmail').value = '';
+        
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+}
+
+function verifyAndChangeEmail(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('emailCurrentPassword').value;
+    const newEmail = document.getElementById('newEmail').value.trim();
+    const confirmEmail = document.getElementById('confirmNewEmail').value.trim();
+    
+    // Verify current password
+    if (currentPassword !== currentUser.password) {
+        alert('❌ Current password is incorrect');
+        return;
+    }
+    
+    // Check email match
+    if (newEmail !== confirmEmail) {
+        alert('❌ Emails do not match');
+        return;
+    }
+    
+    // Check if email already exists
+    if (userDatabase.some(u => u.email === newEmail && u.email !== currentUser.email)) {
+        alert('❌ This email is already registered');
+        return;
+    }
+    
+    // Update email
+    const oldEmail = currentUser.email;
+    
+    // Update in database
+    const userIndex = userDatabase.findIndex(u => u.email === oldEmail);
+    if (userIndex !== -1) {
+        userDatabase[userIndex].email = newEmail;
+    }
+    
+    // Update current user
+    currentUser.email = newEmail;
+    
+    // Update related data (favorites, notifications, cart)
+    if (userFavorites[oldEmail]) {
+        userFavorites[newEmail] = userFavorites[oldEmail];
+        delete userFavorites[oldEmail];
+    }
+    
+    if (userNotifications[oldEmail]) {
+        userNotifications[newEmail] = userNotifications[oldEmail];
+        delete userNotifications[oldEmail];
+    }
+    
+    const oldCart = localStorage.getItem('cart_' + oldEmail);
+    if (oldCart) {
+        localStorage.setItem('cart_' + newEmail, oldCart);
+        localStorage.removeItem('cart_' + oldEmail);
+    }
+    
+    // Save all changes
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    saveData();
+    
+    closeModal('changeEmailModal');
+    showAccount();
+    
+    alert('✅ Email changed successfully to: ' + newEmail);
+}
+
+function openChangePassword() {
+    closeModal('accountModal');
+    
+    const modal = document.getElementById('changePasswordModal');
+    if (modal) {
+        // Clear form
+        document.getElementById('currentPassword').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+        
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
+}
+
+function verifyAndChangePassword(event) {
+    event.preventDefault();
+    
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    
+    // Verify current password
+    if (currentPassword !== currentUser.password) {
+        alert('❌ Current password is incorrect');
+        return;
+    }
+    
+    // Check password length
+    if (newPassword.length < 6) {
+        alert('❌ New password must be at least 6 characters');
+        return;
+    }
+    
+    // Check password match
+    if (newPassword !== confirmPassword) {
+        alert('❌ New passwords do not match');
+        return;
+    }
+    
+    // Check if new password is same as old
+    if (newPassword === currentPassword) {
+        alert('❌ New password must be different from current password');
+        return;
+    }
+    
+    // Update password
+    currentUser.password = newPassword;
+    
+    // Update in database
+    const userIndex = userDatabase.findIndex(u => u.email === currentUser.email);
+    if (userIndex !== -1) {
+        userDatabase[userIndex].password = newPassword;
+    }
+    
+    // Save
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    saveData();
+    
+    closeModal('changePasswordModal');
+    showAccount();
+    
+    alert('✅ Password changed successfully!');
 }
 
 function logout() {
@@ -1814,11 +2199,8 @@ function logout() {
 // AUTH FUNCTIONS
 // ========================================
 function showLogin() {
-    const modal = document.getElementById('loginModal');
-    if (modal) {
-        modal.classList.add('active');
-        if (isSignUpMode) toggleAuthMode();
-    }
+    if (isSignUpMode) toggleAuthMode();
+    openModal('loginModal');
 }
 
 function toggleAuthMode() {
@@ -2053,24 +2435,31 @@ function showRestaurantDashboard() {
     const modal = document.getElementById('restaurantDashboard');
     if (!modal) return;
     
-    // Calculate stats
-    const todayOrders = pendingOrders.filter(o => {
-        const orderDate = new Date(o.createdAt).toDateString();
-        const today = new Date().toDateString();
-        return orderDate === today;
+    // Calculate MONTHLY stats (current month only)
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    // Filter orders from current month
+    const monthlyOrders = [...pendingOrders, ...orderHistory].filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
     });
     
-    const todayRevenue = todayOrders.reduce((sum, o) => sum + o.total, 0);
-    const totalRevenue = orderHistory.reduce((sum, o) => sum + o.total, 0);
+    const monthlyRevenue = monthlyOrders.reduce((sum, o) => sum + o.total, 0);
     const pendingCount = pendingOrders.filter(o => o.status === 'pending').length;
-    const completedCount = orderHistory.filter(o => o.status === 'completed').length;
+    const completedCount = monthlyOrders.filter(o => o.status === 'completed').length;
     
-    // Update stats
-    document.getElementById('todayRevenueStat').textContent = formatPrice(todayRevenue);
-    document.getElementById('totalRevenueStat').textContent = formatPrice(totalRevenue);
-    document.getElementById('pendingOrdersStat').textContent = pendingCount;
-    document.getElementById('completedOrdersStat').textContent = completedCount;
-    document.getElementById('todayOrdersStat').textContent = todayOrders.length;
+    // Update stats - Monthly only (no total revenue for staff)
+    const monthlyRevenueEl = document.getElementById('monthlyRevenueStat');
+    const monthlyOrdersEl = document.getElementById('monthlyOrdersStat');
+    const pendingOrdersEl = document.getElementById('pendingOrdersStat');
+    const completedOrdersEl = document.getElementById('completedOrdersStat');
+    
+    if (monthlyRevenueEl) monthlyRevenueEl.textContent = formatPrice(monthlyRevenue);
+    if (monthlyOrdersEl) monthlyOrdersEl.textContent = monthlyOrders.length;
+    if (pendingOrdersEl) pendingOrdersEl.textContent = pendingCount;
+    if (completedOrdersEl) completedOrdersEl.textContent = completedCount;
     
     // Render pending orders
     const ordersContainer = document.getElementById('restaurantPendingOrders');
@@ -2083,19 +2472,34 @@ function showRestaurantDashboard() {
                 </div>
             `;
         } else {
-            ordersContainer.innerHTML = pendingOrders.map(order => `
+            ordersContainer.innerHTML = pendingOrders.map(order => {
+                // Get user profile picture
+                const user = userDatabase.find(u => u.email === order.userId);
+                const profilePic = user && user.profilePicture 
+                    ? `<img src="${user.profilePicture}" style="width: 100%; height: 100%; object-fit: cover;">` 
+                    : '👤';
+                
+                return `
                 <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border-left: 4px solid ${order.status === 'pending' ? '#f59e0b' : order.status === 'accepted' ? '#10b981' : '#3b82f6'};">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <span style="font-weight: 700; font-size: 1.1rem;">#${order.id}</span>
                         <span style="background: ${order.status === 'pending' ? 'rgba(245,158,11,0.2)' : 'rgba(16,185,129,0.2)'}; color: ${order.status === 'pending' ? '#f59e0b' : '#10b981'}; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${order.status.toUpperCase()}</span>
                     </div>
                     
-                    <div style="margin-bottom: 1rem; font-size: 0.95rem;">
-                        <div style="margin-bottom: 0.5rem;">👤 <strong>${order.userName}</strong></div>
-                        <div style="margin-bottom: 0.5rem;">📞 ${order.userPhone || 'N/A'}</div>
-                        <div style="margin-bottom: 0.5rem;">📍 ${order.address || 'N/A'}</div>
-                        <div style="margin-bottom: 0.5rem;">🕐 ${new Date(order.createdAt).toLocaleString()}</div>
+                    <!-- Customer Info with Profile Picture -->
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem; align-items: center;">
+                        <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; overflow: hidden; flex-shrink: 0; border: 3px solid rgba(255,255,255,0.2);">
+                            ${profilePic}
+                        </div>
+                        <div style="flex: 1; font-size: 0.95rem;">
+                            <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.3rem;">${order.userName}</div>
+                            <div style="color: rgba(255,255,255,0.7);">📞 ${order.userPhone || 'N/A'}</div>
+                            <div style="color: rgba(255,255,255,0.7);">📍 ${order.address || 'N/A'}</div>
+                            ${user && user.age ? `<div style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">Age: ${user.age}</div>` : ''}
+                        </div>
                     </div>
+                    
+                    <div style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 1rem;">🕐 ${new Date(order.createdAt).toLocaleString()}</div>
                     
                     <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                         <div style="font-weight: 600; margin-bottom: 0.5rem;">Items:</div>
@@ -2121,7 +2525,7 @@ function showRestaurantDashboard() {
                         <button onclick="assignDriver('${order.id}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">🚗 Assign Driver</button>
                     ` : ''}
                 </div>
-            `).join('');
+            `}).join('');
         }
     }
     
@@ -2145,7 +2549,47 @@ function acceptOrder(orderId) {
     
     playNotificationSound();
     showRestaurantDashboard();
-    alert(`✅ Order #${orderId} accepted!`);
+    
+    // Ask to notify all available drivers
+    if (confirm(`✅ Order #${orderId} accepted!\n\nDo you want to notify ALL available drivers about this order?`)) {
+        notifyAllAvailableDrivers(orderId);
+    }
+}
+
+function notifyAllAvailableDrivers(orderId) {
+    const order = pendingOrders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    const availableDrivers = window.driverSystem.getAvailable();
+    
+    if (availableDrivers.length === 0) {
+        alert('⚠️ No available drivers at the moment!');
+        return;
+    }
+    
+    // In a real app, this would send push notifications
+    // For now, we'll show an alert simulating notifications sent
+    let notifiedList = '📢 Notification sent to available drivers:\n\n';
+    
+    availableDrivers.forEach(driver => {
+        notifiedList += `✅ ${driver.name} (${driver.phone})\n`;
+        
+        // Store notification for driver (they would see this when they check their app)
+        if (!window.driverNotifications) {
+            window.driverNotifications = {};
+        }
+        if (!window.driverNotifications[driver.id]) {
+            window.driverNotifications[driver.id] = [];
+        }
+        window.driverNotifications[driver.id].push({
+            orderId: orderId,
+            message: `New order #${orderId} available! ${order.items.length} items - ${formatPrice(order.total)} - ${order.address}`,
+            time: new Date().toISOString()
+        });
+    });
+    
+    playNotificationSound();
+    alert(notifiedList + `\n${availableDrivers.length} driver(s) notified!`);
 }
 
 function rejectOrder(orderId) {
@@ -2178,29 +2622,36 @@ function assignDriver(orderId) {
     const order = pendingOrders.find(o => o.id === orderId);
     if (!order) return;
     
-    const drivers = window.driverSystem.getAll().filter(d => d.active);
+    const availableDrivers = window.driverSystem.getAvailable();
     
-    if (drivers.length === 0) {
-        alert('❌ No active drivers available!');
+    if (availableDrivers.length === 0) {
+        alert('❌ No available drivers at the moment!\n\nAll drivers are either offline or inactive.');
         return;
     }
     
-    let driverList = 'Select a driver:\n\n';
-    drivers.forEach((d, i) => {
-        driverList += `${i + 1}. ${d.name} (${d.deliveries} deliveries, ⭐${d.rating})\n`;
+    // Create a nice selection dialog
+    let driverList = '🚗 Available Drivers:\n\n';
+    availableDrivers.forEach((d, i) => {
+        driverList += `${i + 1}. ${d.name}\n   📦 ${d.deliveries} deliveries | ⭐ ${d.rating}\n   📞 ${d.phone}\n\n`;
     });
     
-    const selection = prompt(driverList + '\nEnter driver number:');
+    const selection = prompt(driverList + 'Enter driver number (or 0 to notify all):');
     
-    if (!selection) return;
+    if (selection === null) return;
+    
+    if (selection === '0') {
+        notifyAllAvailableDrivers(orderId);
+        return;
+    }
     
     const driverIndex = parseInt(selection) - 1;
-    if (driverIndex < 0 || driverIndex >= drivers.length) {
+    if (isNaN(driverIndex) || driverIndex < 0 || driverIndex >= availableDrivers.length) {
         alert('❌ Invalid selection');
         return;
     }
     
-    const selectedDriver = drivers[driverIndex];
+    const selectedDriver = availableDrivers[driverIndex];
+    order.driverId = selectedDriver.id;
     order.assignedDriver = selectedDriver.id;
     order.driverName = selectedDriver.name;
     order.status = 'out_for_delivery';
@@ -2214,8 +2665,9 @@ function assignDriver(orderId) {
         orderId: orderId
     });
     
+    playNotificationSound();
     showRestaurantDashboard();
-    alert(`✅ Driver ${selectedDriver.name} assigned to order #${orderId}`);
+    alert(`✅ Driver ${selectedDriver.name} assigned to order #${orderId}\n\n📞 Driver phone: ${selectedDriver.phone}`);
 }
 
 function completeOrder(orderId) {
@@ -2252,6 +2704,319 @@ function completeOrder(orderId) {
 function closeRestaurantDashboard() {
     isRestaurantLoggedIn = false;
     document.getElementById('restaurantDashboard').style.display = 'none';
+}
+
+// ========================================
+// DRIVER MANAGEMENT (OWNER ONLY)
+// ========================================
+function showDriverManagementModal() {
+    if (!isOwnerLoggedIn) {
+        alert('❌ Owner access required!');
+        return;
+    }
+    
+    renderDriverList();
+    openModal('driverManagementModal');
+}
+
+function renderDriverList() {
+    const container = document.getElementById('driverListContainer');
+    if (!container) return;
+    
+    const allDrivers = window.driverSystem.getAll();
+    
+    if (allDrivers.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
+                <div style="font-size: 3rem;">🚗</div>
+                <p>No drivers registered yet</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = allDrivers.map(driver => {
+        const profilePic = driver.profilePicture 
+            ? `<img src="${driver.profilePicture}" style="width: 100%; height: 100%; object-fit: cover;">` 
+            : '🚗';
+        const statusColor = driver.active ? '#10b981' : '#ef4444';
+        const statusText = driver.active ? '🟢 Active' : '🔴 Inactive';
+        const availableText = driver.available ? '✅ Available' : '⏸️ Unavailable';
+        
+        return `
+        <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border-left: 4px solid ${statusColor};">
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; flex-shrink: 0; border: 3px solid ${statusColor};">
+                    ${profilePic}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; font-size: 1.1rem; color: white;">${driver.name}</div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Code: <strong>${driver.secretCode}</strong></div>
+                    <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+                        <span style="font-size: 0.8rem; color: ${driver.active ? '#10b981' : '#ef4444'};">${statusText}</span>
+                        <span style="font-size: 0.8rem; color: ${driver.available ? '#3b82f6' : '#f59e0b'};">${availableText}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem; color: rgba(255,255,255,0.8); margin-bottom: 1rem;">
+                <div>📧 ${driver.email}</div>
+                <div>📞 ${driver.phone}</div>
+                <div>📦 ${driver.deliveries || 0} deliveries</div>
+                <div>⭐ ${driver.rating || 5.0} rating</div>
+                ${driver.dob ? `<div>🎂 ${new Date(driver.dob).toLocaleDateString()}</div>` : ''}
+                ${driver.gender ? `<div>👤 ${driver.gender.charAt(0).toUpperCase() + driver.gender.slice(1)}</div>` : ''}
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
+                <button onclick="editDriver('${driver.id}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">✏️ Edit</button>
+                <button onclick="toggleDriverStatus('${driver.id}')" style="background: ${driver.active ? 'linear-gradient(45deg, #f59e0b, #d97706)' : 'linear-gradient(45deg, #10b981, #059669)'}; color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">${driver.active ? '⏸️ Deactivate' : '▶️ Activate'}</button>
+                <button onclick="deleteDriver('${driver.id}')" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">🗑️ Remove</button>
+            </div>
+        </div>
+    `}).join('');
+}
+
+function editDriver(driverId) {
+    const driver = window.driverSystem.get(driverId);
+    if (!driver) return;
+    
+    const editDriverId = document.getElementById('editDriverId');
+    const editDriverName = document.getElementById('editDriverName');
+    const editDriverEmail = document.getElementById('editDriverEmail');
+    const editDriverPhone = document.getElementById('editDriverPhone');
+    const editDriverPassword = document.getElementById('editDriverPassword');
+    const editDriverBirth = document.getElementById('editDriverBirth');
+    const editDriverGender = document.getElementById('editDriverGender');
+    const editDriverStatus = document.getElementById('editDriverStatus');
+    
+    if (editDriverId) editDriverId.value = driverId;
+    if (editDriverName) editDriverName.value = driver.name || '';
+    if (editDriverEmail) editDriverEmail.value = driver.email || '';
+    if (editDriverPhone) editDriverPhone.value = driver.phone || '';
+    if (editDriverPassword) editDriverPassword.value = '';
+    if (editDriverBirth) editDriverBirth.value = driver.dob || '';
+    if (editDriverGender) editDriverGender.value = driver.gender || '';
+    if (editDriverStatus) editDriverStatus.value = driver.active ? 'active' : 'inactive';
+    
+    const preview = document.getElementById('editDriverPicPreview');
+    if (preview) {
+        if (driver.profilePicture) {
+            preview.innerHTML = `<img src="${driver.profilePicture}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+            preview.innerHTML = '🚗';
+        }
+        preview.dataset.newPic = '';
+    }
+    
+    openModal('editDriverModal');
+}
+
+function previewDriverPic(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('newDriverPicPreview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            preview.dataset.newPic = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function previewEditDriverPic(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('editDriverPicPreview');
+            preview.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
+            preview.dataset.newPic = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function saveDriverChanges() {
+    const driverId = document.getElementById('editDriverId').value;
+    const driver = window.driverSystem.get(driverId);
+    if (!driver) return;
+    
+    const name = document.getElementById('editDriverName').value.trim();
+    const email = document.getElementById('editDriverEmail').value.trim();
+    const phone = document.getElementById('editDriverPhone').value.trim();
+    const password = document.getElementById('editDriverPassword').value;
+    const dob = document.getElementById('editDriverBirth').value;
+    const gender = document.getElementById('editDriverGender').value;
+    const status = document.getElementById('editDriverStatus').value;
+    const preview = document.getElementById('editDriverPicPreview');
+    const newPic = preview.dataset.newPic;
+    
+    if (!name || !email || !phone) {
+        alert('❌ Name, email and phone are required');
+        return;
+    }
+    
+    const updates = {
+        name: name,
+        email: email,
+        phone: phone,
+        dob: dob,
+        gender: gender,
+        active: status === 'active'
+    };
+    
+    if (password) {
+        updates.password = password;
+    }
+    
+    if (newPic) {
+        updates.profilePicture = newPic;
+    }
+    
+    window.driverSystem.update(driverId, updates);
+    
+    closeModal('editDriverModal');
+    renderDriverList();
+    updateOwnerStats();
+    
+    alert('✅ Driver updated successfully!');
+}
+
+function toggleDriverStatus(driverId) {
+    const driver = window.driverSystem.get(driverId);
+    if (!driver) return;
+    
+    const newStatus = !driver.active;
+    window.driverSystem.update(driverId, { active: newStatus, available: newStatus });
+    
+    renderDriverList();
+    alert(`✅ Driver ${driver.name} is now ${newStatus ? 'Active' : 'Inactive'}`);
+}
+
+function addNewDriver() {
+    const name = document.getElementById('newDriverName').value.trim();
+    const email = document.getElementById('newDriverEmail').value.trim();
+    const phone = document.getElementById('newDriverPhone').value.trim();
+    const password = document.getElementById('newDriverPassword').value;
+    const dob = document.getElementById('newDriverBirth').value;
+    const gender = document.getElementById('newDriverGender').value;
+    const preview = document.getElementById('newDriverPicPreview');
+    const profilePic = preview.dataset ? preview.dataset.newPic : null;
+    
+    if (!name || !email || !phone || !password) {
+        alert('❌ Please fill in name, email, phone and password');
+        return;
+    }
+    
+    // Check if email already exists
+    if (window.driverSystem.getByEmail(email)) {
+        alert('❌ A driver with this email already exists');
+        return;
+    }
+    
+    // Generate unique driver code
+    const driverCount = window.driverSystem.getAll().length + 1;
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    const secretCode = `DRV-${String(driverCount).padStart(3, '0')}-${initials}`;
+    
+    const newDriver = {
+        id: 'driver-' + Date.now(),
+        name: name,
+        email: email,
+        phone: phone,
+        password: password,
+        dob: dob || null,
+        gender: gender || null,
+        secretCode: secretCode,
+        deliveries: 0,
+        rating: 5.0,
+        active: true,
+        available: true,
+        profilePicture: profilePic || null,
+        currentLocation: null,
+        createdAt: new Date().toISOString()
+    };
+    
+    window.driverSystem.add(newDriver);
+    
+    // Clear form
+    document.getElementById('newDriverName').value = '';
+    document.getElementById('newDriverEmail').value = '';
+    document.getElementById('newDriverPhone').value = '';
+    document.getElementById('newDriverPassword').value = '';
+    document.getElementById('newDriverBirth').value = '';
+    document.getElementById('newDriverGender').value = '';
+    if (preview) {
+        preview.innerHTML = '🚗';
+        preview.dataset.newPic = '';
+    }
+    
+    // Update UI
+    renderDriverList();
+    updateOwnerStats();
+    
+    alert(`✅ Driver ${name} added!\n\nSecret Code: ${secretCode}\nPassword: ${password}\n\nDriver can login with either the code or email+password.`);
+}
+
+function deleteDriver(driverId) {
+    if (!confirm('Are you sure you want to remove this driver?')) return;
+    
+    window.driverSystem.delete(driverId);
+    renderDriverList();
+    updateOwnerStats();
+    
+    alert('✅ Driver removed');
+}
+
+// ========================================
+// BANK SETTINGS (OWNER ONLY)
+// ========================================
+function showBankSettingsModal() {
+    if (!isOwnerLoggedIn) {
+        alert('❌ Owner access required!');
+        return;
+    }
+    
+    // Load existing bank details
+    const bankNameEl = document.getElementById('bankName');
+    const accountHolderEl = document.getElementById('accountHolder');
+    const accountNumberEl = document.getElementById('accountNumber');
+    const sortCodeEl = document.getElementById('sortCode');
+    const ibanEl = document.getElementById('iban');
+    
+    if (bankNameEl) bankNameEl.value = ownerBankDetails.bankName || '';
+    if (accountHolderEl) accountHolderEl.value = ownerBankDetails.accountHolder || '';
+    if (accountNumberEl) accountNumberEl.value = ownerBankDetails.accountNumber || '';
+    if (sortCodeEl) sortCodeEl.value = ownerBankDetails.sortCode || '';
+    if (ibanEl) ibanEl.value = ownerBankDetails.iban || '';
+    
+    openModal('bankSettingsModal');
+}
+
+function saveBankSettings(event) {
+    event.preventDefault();
+    
+    ownerBankDetails = {
+        bankName: document.getElementById('bankName').value,
+        accountHolder: document.getElementById('accountHolder').value,
+        accountNumber: document.getElementById('accountNumber').value,
+        sortCode: document.getElementById('sortCode').value,
+        iban: document.getElementById('iban').value || ''
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('ownerBankDetails', JSON.stringify(ownerBankDetails));
+    
+    closeModal('bankSettingsModal');
+    alert('✅ Bank details saved successfully!');
+}
+
+// Load bank details on init
+function loadBankDetails() {
+    const saved = localStorage.getItem('ownerBankDetails');
+    if (saved) {
+        ownerBankDetails = JSON.parse(saved);
+    }
 }
 
 // ========================================
@@ -2301,99 +3066,291 @@ function updateOwnerStats() {
 // DRIVER FUNCTIONS
 // ========================================
 function showDriverLogin() {
-    const modal = document.getElementById('driverLoginModal');
-    if (modal) modal.classList.add('active');
+    showDriverCodeLogin();
+    openModal('driverLoginModal');
 }
 
-function handleDriverLogin(event) {
+function showDriverCodeLogin() {
+    const codeLogin = document.getElementById('driverCodeLogin');
+    const emailLogin = document.getElementById('driverEmailLogin');
+    if (codeLogin) codeLogin.style.display = 'block';
+    if (emailLogin) emailLogin.style.display = 'none';
+}
+
+function showDriverEmailLogin() {
+    const codeLogin = document.getElementById('driverCodeLogin');
+    const emailLogin = document.getElementById('driverEmailLogin');
+    if (codeLogin) codeLogin.style.display = 'none';
+    if (emailLogin) emailLogin.style.display = 'block';
+}
+
+function handleDriverCodeLogin(event) {
     event.preventDefault();
-    const emailOrCode = document.getElementById('driverEmailOrCode').value.trim();
-    const password = document.getElementById('driverPassword').value;
+    const code = document.getElementById('driverSecretCode').value.trim().toUpperCase();
     
-    if (!emailOrCode || !password) {
-        alert('❌ Please enter email/code and password!');
+    if (!code) {
+        alert('❌ Please enter your secret code!');
         return;
     }
     
-    let foundDriver = null;
-    let foundId = null;
+    const driver = window.driverSystem.getByCode(code);
     
-    Object.keys(window.driverSystem.drivers).forEach(id => {
-        const driver = window.driverSystem.drivers[id];
-        if (driver.email === emailOrCode || driver.secretCode === emailOrCode) {
-            foundDriver = driver;
-            foundId = id;
-        }
-    });
-    
-    if (!foundDriver) {
-        alert('❌ Driver not found!');
+    if (!driver) {
+        alert('❌ Invalid secret code!');
         return;
     }
     
-    if (foundDriver.active === false) {
-        alert('❌ Your account is inactive!');
+    if (!driver.active) {
+        alert('❌ Your account is inactive. Please contact management.');
         return;
     }
     
-    if (foundDriver.password !== password) {
+    // Login successful
+    loginDriver(driver);
+}
+
+function handleDriverEmailPasswordLogin(event) {
+    event.preventDefault();
+    const email = document.getElementById('driverLoginEmail').value.trim();
+    const password = document.getElementById('driverLoginPassword').value;
+    
+    if (!email || !password) {
+        alert('❌ Please enter email and password!');
+        return;
+    }
+    
+    const driver = window.driverSystem.getByEmail(email);
+    
+    if (!driver) {
+        alert('❌ Driver not found with this email!');
+        return;
+    }
+    
+    if (!driver.active) {
+        alert('❌ Your account is inactive. Please contact management.');
+        return;
+    }
+    
+    if (driver.password !== password) {
         alert('❌ Incorrect password!');
         return;
     }
     
     // Login successful
-    sessionStorage.setItem('loggedInDriver', foundId);
-    sessionStorage.setItem('driverName', foundDriver.name);
+    loginDriver(driver);
+}
+
+function loginDriver(driver) {
+    currentDriver = driver;
+    sessionStorage.setItem('loggedInDriver', driver.id);
+    sessionStorage.setItem('driverName', driver.name);
+    
+    // Clear forms
+    const codeInput = document.getElementById('driverSecretCode');
+    const emailInput = document.getElementById('driverLoginEmail');
+    const passInput = document.getElementById('driverLoginPassword');
+    if (codeInput) codeInput.value = '';
+    if (emailInput) emailInput.value = '';
+    if (passInput) passInput.value = '';
     
     closeModal('driverLoginModal');
     closeModal('loginModal');
     
-    document.getElementById('driverEmailOrCode').value = '';
-    document.getElementById('driverPassword').value = '';
-    
-    updateDriverLoginUI(foundDriver.name);
-    
-    alert(`✅ Welcome, ${foundDriver.name}!`);
+    updateDriverLoginUI(driver.name);
+    showDriverDashboard(driver);
 }
 
 function updateDriverLoginUI(driverName) {
     const loginBtn = document.querySelector('.login-btn');
     if (loginBtn) {
-        loginBtn.textContent = driverName;
-        loginBtn.onclick = showDriverProfile;
+        loginBtn.textContent = `🚗 ${driverName}`;
+        loginBtn.onclick = function() { showDriverDashboard(); };
     }
 }
 
-function showDriverProfile() {
-    const driverId = sessionStorage.getItem('loggedInDriver');
-    if (!driverId) {
-        showLogin();
+function showDriverDashboard(driver = null) {
+    if (!driver) {
+        const driverId = sessionStorage.getItem('loggedInDriver');
+        if (!driverId) {
+            showLogin();
+            return;
+        }
+        driver = window.driverSystem.get(driverId);
+    }
+    
+    if (!driver) {
+        alert('❌ Driver session expired. Please login again.');
+        logoutDriver();
         return;
     }
+    
+    const modal = document.getElementById('driverDashboardModal');
+    const content = document.getElementById('driverDashboardContent');
+    if (!modal || !content) return;
+    
+    // Get driver's assigned orders
+    const assignedOrders = pendingOrders.filter(o => o.driverId === driver.id);
+    
+    const profilePic = driver.profilePicture 
+        ? `<img src="${driver.profilePicture}" style="width: 100%; height: 100%; object-fit: cover;">` 
+        : '🚗';
+    
+    content.innerHTML = `
+        <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 2rem;">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; border: 3px solid rgba(255,255,255,0.3);">
+                ${profilePic}
+            </div>
+            <h2 style="margin: 0; color: white;">${driver.name}</h2>
+            <p style="margin: 0.5rem 0 0; color: rgba(255,255,255,0.8);">${driver.secretCode}</p>
+            <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;">
+                <div><span style="font-size: 1.5rem; font-weight: 700;">${driver.deliveries || 0}</span><br><span style="font-size: 0.85rem; opacity: 0.9;">Deliveries</span></div>
+                <div><span style="font-size: 1.5rem; font-weight: 700;">⭐ ${driver.rating || 5.0}</span><br><span style="font-size: 0.85rem; opacity: 0.9;">Rating</span></div>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+            <button onclick="toggleDriverAvailability()" style="flex: 1; background: ${driver.available ? 'linear-gradient(45deg, #f59e0b, #d97706)' : 'linear-gradient(45deg, #10b981, #059669)'}; color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600;">
+                ${driver.available ? '⏸️ Go Offline' : '▶️ Go Online'}
+            </button>
+            <button onclick="updateDriverLocation()" style="flex: 1; background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600;">
+                📍 Update Location
+            </button>
+        </div>
+        
+        <h3 style="color: white; margin-bottom: 1rem;">📦 Assigned Orders (${assignedOrders.length})</h3>
+        
+        ${assignedOrders.length === 0 ? `
+            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
+                <div style="font-size: 3rem;">📦</div>
+                <p>No orders assigned yet</p>
+                <p style="font-size: 0.85rem;">Stay online to receive delivery requests!</p>
+            </div>
+        ` : assignedOrders.map(order => `
+            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border-left: 4px solid #3b82f6;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <span style="font-weight: 700; font-size: 1.1rem;">#${order.id}</span>
+                    <span style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${order.status.toUpperCase()}</span>
+                </div>
+                
+                <div style="margin-bottom: 1rem; font-size: 0.95rem;">
+                    <div style="margin-bottom: 0.5rem;">👤 <strong>${order.userName}</strong></div>
+                    <div style="margin-bottom: 0.5rem;">📞 ${order.userPhone || 'N/A'}</div>
+                    <div style="margin-bottom: 0.5rem;">📍 ${order.address || 'N/A'}</div>
+                    <div style="margin-bottom: 0.5rem;">💰 <strong style="color: #10b981;">${formatPrice(order.total)}</strong></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <button onclick="openDirections('${encodeURIComponent(order.address)}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">🗺️ Directions</button>
+                    <button onclick="markOrderDelivered('${order.id}')" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">✅ Delivered</button>
+                </div>
+            </div>
+        `).join('')}
+        
+        <button onclick="logoutDriver()" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 2px solid #ef4444; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 1rem;">
+            🚪 Logout
+        </button>
+    `;
+    
+    openModal('driverDashboardModal');
+}
+
+function toggleDriverAvailability() {
+    const driverId = sessionStorage.getItem('loggedInDriver');
+    if (!driverId) return;
     
     const driver = window.driverSystem.get(driverId);
     if (!driver) return;
     
-    alert(`🚗 Driver Profile\n\n` +
-        `Name: ${driver.name}\n` +
-        `Email: ${driver.email}\n` +
-        `Phone: ${driver.phone}\n` +
-        `Deliveries: ${driver.deliveries}\n` +
-        `Rating: ⭐${driver.rating}\n\n` +
-        `Secret Code: ${driver.secretCode}`);
+    const newStatus = !driver.available;
+    window.driverSystem.update(driverId, { available: newStatus });
+    
+    showDriverDashboard();
+    alert(`✅ You are now ${newStatus ? 'Online - Ready for deliveries!' : 'Offline'}`);
+}
+
+function updateDriverLocation() {
+    if (!navigator.geolocation) {
+        alert('❌ Geolocation is not supported by your browser');
+        return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const driverId = sessionStorage.getItem('loggedInDriver');
+            if (driverId) {
+                window.driverSystem.update(driverId, {
+                    currentLocation: {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        updatedAt: new Date().toISOString()
+                    }
+                });
+                alert('✅ Location updated successfully!');
+            }
+        },
+        (error) => {
+            alert('❌ Unable to get your location: ' + error.message);
+        }
+    );
+}
+
+function openDirections(address) {
+    // Open Google Maps with directions
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${address}`;
+    window.open(url, '_blank');
+}
+
+function markOrderDelivered(orderId) {
+    if (!confirm('Mark this order as delivered?')) return;
+    
+    const order = pendingOrders.find(o => o.id === orderId);
+    if (!order) return;
+    
+    // Update order status
+    order.status = 'completed';
+    
+    // Move to order history
+    orderHistory.push(order);
+    pendingOrders = pendingOrders.filter(o => o.id !== orderId);
+    
+    // Update driver stats
+    const driverId = sessionStorage.getItem('loggedInDriver');
+    if (driverId) {
+        const driver = window.driverSystem.get(driverId);
+        if (driver) {
+            window.driverSystem.update(driverId, {
+                deliveries: (driver.deliveries || 0) + 1
+            });
+        }
+    }
+    
+    // Notify customer
+    addNotification(order.userId, {
+        type: 'order_completed',
+        title: '🎉 Order Delivered!',
+        message: `Your order #${orderId} has been delivered. Enjoy your meal!`,
+        orderId: orderId
+    });
+    
+    saveData();
+    playNotificationSound();
+    showDriverDashboard();
+    
+    alert('✅ Order marked as delivered!');
 }
 
 function logoutDriver() {
-    if (!confirm('Are you sure you want to logout?')) return;
-    
     sessionStorage.removeItem('loggedInDriver');
     sessionStorage.removeItem('driverName');
+    currentDriver = null;
     
     const loginBtn = document.querySelector('.login-btn');
     if (loginBtn) {
         loginBtn.textContent = 'Login';
         loginBtn.onclick = showLogin;
     }
+    
+    closeModal('driverDashboardModal');
     
     alert('✅ Logged out successfully');
 }
@@ -2575,20 +3532,73 @@ function confirmLocation() {
 // ========================================
 // MODAL & UTILITY FUNCTIONS
 // ========================================
+
+// Track which modals are open
+let openModals = [];
+
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-        if (modalId === 'ownerModal' || modalId === 'restaurantLoginModal' || modalId === 'restaurantDashboard') {
-            modal.style.display = 'none';
-        }
+    if (!modal) return;
+    
+    // Remove from open modals list
+    openModals = openModals.filter(id => id !== modalId);
+    
+    // Hide modal
+    modal.classList.remove('active');
+    modal.style.display = 'none';
+    
+    // Reset specific modal states
+    if (modalId === 'loginModal') {
+        const authForm = document.getElementById('authFormSection');
+        const verifySection = document.getElementById('emailVerificationSection');
+        if (authForm) authForm.style.display = 'block';
+        if (verifySection) verifySection.style.display = 'none';
     }
     
-    if (modalId === 'loginModal') {
-        document.getElementById('authFormSection').style.display = 'block';
-        document.getElementById('emailVerificationSection').style.display = 'none';
+    if (modalId === 'driverLoginModal') {
+        showDriverCodeLogin();
+    }
+    
+    // Re-enable body scrolling if no modals open
+    if (openModals.length === 0) {
+        document.body.style.overflow = '';
     }
 }
+
+function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+    
+    // Add to open modals list if not already there
+    if (!openModals.includes(modalId)) {
+        openModals.push(modalId);
+    }
+    
+    // Show modal
+    modal.style.display = 'flex';
+    modal.classList.add('active');
+    
+    // Disable body scrolling
+    document.body.style.overflow = 'hidden';
+}
+
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal') && e.target.classList.contains('active')) {
+        const modalId = e.target.id;
+        if (modalId) {
+            closeModal(modalId);
+        }
+    }
+});
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && openModals.length > 0) {
+        const lastModal = openModals[openModals.length - 1];
+        closeModal(lastModal);
+    }
+});
 
 function scrollToMenu() {
     document.querySelector('.main-content')?.scrollIntoView({ behavior: 'smooth' });
@@ -2611,6 +3621,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load data
     loadData();
+    loadBankDetails();
     
     // Render categories
     renderCategories();
@@ -2685,7 +3696,6 @@ window.toggleAuthMode = toggleAuthMode;
 window.loginWithGoogle = loginWithGoogle;
 window.loginWithApple = loginWithApple;
 window.handleRestaurantLogin = handleRestaurantLogin;
-window.handleDriverLogin = handleDriverLogin;
 window.handleOwnerLogin = handleOwnerLogin;
 window.pickLocation = pickLocation;
 window.getCurrentLocation = getCurrentLocation;
@@ -2695,5 +3705,50 @@ window.rejectOrder = rejectOrder;
 window.assignDriver = assignDriver;
 window.completeOrder = completeOrder;
 window.closeRestaurantDashboard = closeRestaurantDashboard;
+window.showDriverManagementModal = showDriverManagementModal;
+window.addNewDriver = addNewDriver;
+window.deleteDriver = deleteDriver;
+window.showBankSettingsModal = showBankSettingsModal;
+window.saveBankSettings = saveBankSettings;
 window.logout = logout;
 window.logoutDriver = logoutDriver;
+window.openEditProfile = openEditProfile;
+window.previewProfilePic = previewProfilePic;
+window.saveProfileChanges = saveProfileChanges;
+window.openChangeEmail = openChangeEmail;
+window.verifyAndChangeEmail = verifyAndChangeEmail;
+window.openChangePassword = openChangePassword;
+window.verifyAndChangePassword = verifyAndChangePassword;
+
+// New driver functions
+window.showDriverCodeLogin = showDriverCodeLogin;
+window.showDriverEmailLogin = showDriverEmailLogin;
+window.handleDriverCodeLogin = handleDriverCodeLogin;
+window.handleDriverEmailPasswordLogin = handleDriverEmailPasswordLogin;
+window.showDriverDashboard = showDriverDashboard;
+window.toggleDriverAvailability = toggleDriverAvailability;
+window.updateDriverLocation = updateDriverLocation;
+window.openDirections = openDirections;
+window.markOrderDelivered = markOrderDelivered;
+
+// Driver management functions
+window.editDriver = editDriver;
+window.previewDriverPic = previewDriverPic;
+window.previewEditDriverPic = previewEditDriverPic;
+window.saveDriverChanges = saveDriverChanges;
+window.toggleDriverStatus = toggleDriverStatus;
+window.notifyAllAvailableDrivers = notifyAllAvailableDrivers;
+
+// Reorder functions
+window.reorderFromHistory = reorderFromHistory;
+window.confirmReorder = confirmReorder;
+
+// Location confirmation functions
+window.showLocationConfirmation = showLocationConfirmation;
+window.confirmCurrentLocation = confirmCurrentLocation;
+window.changeDeliveryLocation = changeDeliveryLocation;
+window.openCheckoutModal = openCheckoutModal;
+
+// Modal functions
+window.openModal = openModal;
+window.closeModal = closeModal;
