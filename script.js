@@ -11,9 +11,12 @@ const UK_CONFIG = {
     restaurant: {
         name: 'Antalya Shawarma',
         address: '181 Market St, Hyde SK14 1HF',
-        phone: '+44 121 293 0395',
+        phone: '+44 161 536 1862',
         lat: 53.4514,
-        lng: -2.0839
+        lng: -2.0839,
+        openTime: 11, // 11:00 AM
+        closeTime: 23, // 11:00 PM
+        lastOrderTime: 22.5 // 10:30 PM (22:30)
     },
     deliveryZones: {
         free: { max: 1, price: 0 },
@@ -23,6 +26,71 @@ const UK_CONFIG = {
     maxDeliveryDistance: 6,
     currency: '£'
 };
+
+// Get UK time (handles BST/GMT automatically)
+function getUKTime() {
+    const now = new Date();
+    // Convert to UK timezone
+    const ukTime = new Date(now.toLocaleString('en-GB', { timeZone: 'Europe/London' }));
+    return ukTime;
+}
+
+function getUKHour() {
+    const ukTime = getUKTime();
+    return ukTime.getHours() + (ukTime.getMinutes() / 60);
+}
+
+// Check if restaurant is open for orders (UK TIME)
+function isRestaurantOpen() {
+    const currentHour = getUKHour();
+    return currentHour >= UK_CONFIG.restaurant.openTime && currentHour < UK_CONFIG.restaurant.lastOrderTime;
+}
+
+function getRestaurantStatus() {
+    const currentHour = getUKHour();
+    const ukTime = getUKTime();
+    const timeStr = ukTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    
+    if (currentHour < UK_CONFIG.restaurant.openTime) {
+        return { open: false, message: `Opens at 11:00 (UK time: ${timeStr})` };
+    } else if (currentHour >= UK_CONFIG.restaurant.closeTime) {
+        return { open: false, message: `Closed for today (UK time: ${timeStr})` };
+    } else if (currentHour >= UK_CONFIG.restaurant.lastOrderTime) {
+        return { open: false, message: `Kitchen closed - Last orders at 22:30 (UK time: ${timeStr})` };
+    }
+    return { open: true, message: 'Open for orders' };
+}
+
+// Reset all website data
+function resetAllData() {
+    if (!confirm('⚠️ Are you sure you want to delete ALL data?\n\nThis will remove:\n- All user accounts\n- All order history\n- All driver data\n- All favorites & notifications\n\nThis cannot be undone!')) {
+        return;
+    }
+    
+    // Clear all localStorage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Reset global variables
+    cart = [];
+    currentUser = null;
+    userDatabase = [];
+    orderHistory = [];
+    pendingOrders = [];
+    userFavorites = {};
+    userNotifications = {};
+    selectedLocation = null;
+    isOwnerLoggedIn = false;
+    isRestaurantLoggedIn = false;
+    
+    // Reset driver system
+    if (window.driverSystem) {
+        window.driverSystem.drivers = {};
+    }
+    
+    alert('✅ All data has been reset!\n\nThe page will now reload.');
+    location.reload();
+}
 
 // ========================================
 // CREDENTIALS
@@ -41,14 +109,17 @@ const RESTAURANT_CREDENTIALS = {
 // ========================================
 // COMPLETE ANTALYA SHAWARMA MENU DATA
 // ========================================
-const menuData = {
+// Using let so owner can modify menu
+let menuData = {
     // SHAWARMA WRAPS & SANDWICHES
     shawarma: [
         { 
             id: 101, 
             name: 'Chicken Shawarma Wrap', 
             price: 6.99, 
-            icon: '🌯', 
+            icon: '🌯',
+            image: '', // Custom image URL (empty = use icon)
+            available: true,
             desc: 'Tender marinated chicken with garlic sauce, salad & pickles in fresh naan',
             options: [
                 {name: 'Extra Meat', price: 2.00},
@@ -63,7 +134,9 @@ const menuData = {
             id: 102, 
             name: 'Lamb Shawarma Wrap', 
             price: 7.99, 
-            icon: '🌯', 
+            icon: '🌯',
+            image: '',
+            available: true,
             desc: 'Juicy lamb shawarma with tahini sauce, fresh salad in naan bread',
             options: [
                 {name: 'Extra Meat', price: 2.50},
@@ -77,7 +150,9 @@ const menuData = {
             id: 103, 
             name: 'Mixed Shawarma Wrap', 
             price: 8.99, 
-            icon: '🌯', 
+            icon: '🌯',
+            image: '',
+            available: true,
             desc: 'Best of both - chicken & lamb shawarma combo with all sauces',
             options: [
                 {name: 'Extra Meat', price: 3.00},
@@ -546,42 +621,65 @@ const menuData = {
         }
     ],
     
-    // BURGERS
-    burgers: [
+    // KEBABS (Halal)
+    kebabs: [
         { 
             id: 1001, 
-            name: 'Classic Beef Burger', 
-            price: 7.99, 
-            icon: '🍔', 
-            desc: 'Beef patty served in a bun with salad',
+            name: 'Adana Kebab', 
+            price: 9.99, 
+            icon: '🥙', 
+            desc: 'Spiced minced lamb kebab served with salad, rice & naan',
             options: [
-                {name: 'Add Cheese', price: 1.00},
-                {name: 'Add Bacon', price: 1.50},
-                {name: 'Extra Patty', price: 2.50}
+                {name: 'Extra Meat', price: 2.50},
+                {name: 'Add Hummus', price: 1.00},
+                {name: 'Extra Naan', price: 1.50}
             ]
         },
         { 
             id: 1002, 
-            name: 'Chicken Burger', 
-            price: 7.49, 
-            icon: '🍔', 
-            desc: 'Crispy chicken fillet burger with lettuce and mayo',
+            name: 'Lamb Tikka Kebab', 
+            price: 10.99, 
+            icon: '🥙', 
+            desc: 'Tender lamb tikka pieces with salad & fresh naan',
             options: [
-                {name: 'Add Cheese', price: 1.00},
-                {name: 'Extra Chicken', price: 2.50},
-                {name: 'Make it Spicy', price: 0}
+                {name: 'Extra Meat', price: 3.00},
+                {name: 'Add Rice', price: 2.00},
+                {name: 'Add Hummus', price: 1.00}
             ]
         },
         { 
             id: 1003, 
-            name: 'Quarter Pounder Cheese', 
-            price: 8.99, 
-            icon: '🍔', 
-            desc: 'Quarter-pound cheeseburger served with chips',
+            name: 'Chicken Tikka Kebab', 
+            price: 9.49, 
+            icon: '🥙', 
+            desc: 'Marinated chicken tikka with salad & naan bread',
             options: [
-                {name: 'Extra Cheese', price: 1.00},
-                {name: 'Add Bacon', price: 1.50},
-                {name: 'Extra Patty', price: 3.00}
+                {name: 'Extra Chicken', price: 2.50},
+                {name: 'Add Rice', price: 2.00},
+                {name: 'Make it Spicy', price: 0}
+            ]
+        },
+        { 
+            id: 1004, 
+            name: 'Kofte Kebab', 
+            price: 8.99, 
+            icon: '🥙', 
+            desc: 'Traditional lamb kofte with fresh salad & sauce',
+            options: [
+                {name: 'Extra Kofte', price: 2.00},
+                {name: 'Add Cheese', price: 1.00},
+                {name: 'Extra Naan', price: 1.50}
+            ]
+        },
+        { 
+            id: 1005, 
+            name: 'Lamb Back Strap Fillet', 
+            price: 12.99, 
+            icon: '🥩', 
+            desc: 'Premium lamb fillet served with salad, sauce & naan',
+            options: [
+                {name: 'Extra Fillet', price: 4.00},
+                {name: 'Add Rice', price: 2.00}
             ]
         }
     ],
@@ -590,46 +688,46 @@ const menuData = {
     meals: [
         { 
             id: 1101, 
-            name: 'Margherita Meal Deal', 
-            price: 11.99, 
-            icon: '🍕', 
-            desc: 'Classic margherita pizza with chips and Pepsi',
+            name: 'Shawarma Meal Deal', 
+            price: 10.99, 
+            icon: '🌯', 
+            desc: 'Chicken shawarma wrap with chips and drink',
+            options: [
+                {name: 'Upgrade to Lamb', price: 1.00},
+                {name: 'Large Chips', price: 1.50}
+            ]
+        },
+        { 
+            id: 1102, 
+            name: 'Kebab Meal Deal', 
+            price: 12.99, 
+            icon: '🥙', 
+            desc: 'Choice of kebab with chips and drink',
             options: [
                 {name: 'Upgrade Drink', price: 1.00},
                 {name: 'Large Chips', price: 1.50}
             ]
         },
         { 
-            id: 1102, 
-            name: 'Chicken Strips Meal', 
-            price: 9.99, 
-            icon: '🍗', 
-            desc: 'Four chicken strips with chips and Pepsi',
-            options: [
-                {name: 'Extra Strips (2pc)', price: 2.00},
-                {name: 'Upgrade Drink', price: 1.00}
-            ]
-        },
-        { 
             id: 1103, 
-            name: 'Hot Wings Meal', 
-            price: 9.99, 
-            icon: '🍗', 
-            desc: 'Six hot wings with chips and Pepsi',
+            name: 'Grill Meal Deal', 
+            price: 14.99, 
+            icon: '🍖', 
+            desc: 'Mixed grill portion with chips and drink',
             options: [
-                {name: 'Extra Wings (3pc)', price: 3.00},
+                {name: 'Extra Meat', price: 3.00},
                 {name: 'Upgrade Drink', price: 1.00}
             ]
         },
         { 
             id: 1104, 
-            name: 'Burger Meal Deal', 
-            price: 10.99, 
-            icon: '🍔', 
-            desc: 'Quarter-pound cheeseburger with chips and Pepsi',
+            name: 'Family Sharing Deal', 
+            price: 29.99, 
+            icon: '🍽️', 
+            desc: '2 shawarma wraps, 2 portions chips, hummus & 2 drinks',
             options: [
-                {name: 'Upgrade to Double', price: 2.50},
-                {name: 'Large Chips', price: 1.50}
+                {name: 'Add Extra Wrap', price: 5.00},
+                {name: 'Add Falafel', price: 3.00}
             ]
         }
     ],
@@ -751,24 +849,58 @@ const menuData = {
 };
 
 // ========================================
-// CATEGORY NAMES & ICONS
+// CATEGORY NAMES & ICONS (can be modified by owner)
 // ========================================
-const categories = {
-    shawarma: { name: 'Shawarma Wraps', icon: '🌯' },
-    portions_chips: { name: 'Portions (Chips)', icon: '🍟' },
-    portions_rice: { name: 'Portions (Rice)', icon: '🍚' },
-    grill: { name: 'Grill Portions', icon: '🍖' },
-    platters: { name: 'Family Platters', icon: '🍽️' },
-    rice: { name: 'Rice & Biryani', icon: '🍚' },
-    chicken: { name: 'Roasted Chicken', icon: '🍗' },
-    fatayer: { name: 'Fatayer', icon: '🥟' },
-    pizza: { name: 'Pizza', icon: '🍕' },
-    burgers: { name: 'Burgers', icon: '🍔' },
-    meals: { name: 'Meal Deals', icon: '🎁' },
-    sides: { name: 'Sides & Extras', icon: '🥗' },
-    sauces: { name: 'Sauces', icon: '🧄' },
-    drinks: { name: 'Drinks', icon: '🥤' }
+let categories = {
+    shawarma: { name: 'Shawarma Wraps', icon: '🌯', image: '' },
+    portions_chips: { name: 'Portions (Chips)', icon: '🍟', image: '' },
+    portions_rice: { name: 'Portions (Rice)', icon: '🍚', image: '' },
+    grill: { name: 'Grill Portions', icon: '🍖', image: '' },
+    platters: { name: 'Family Platters', icon: '🍽️', image: '' },
+    rice: { name: 'Rice & Biryani', icon: '🍚', image: '' },
+    chicken: { name: 'Roasted Chicken', icon: '🍗', image: '' },
+    fatayer: { name: 'Fatayer', icon: '🥟', image: '' },
+    pizza: { name: 'Pizza', icon: '🍕', image: '' },
+    kebabs: { name: 'Kebabs', icon: '🥙', image: '' },
+    meals: { name: 'Meal Deals', icon: '🎁', image: '' },
+    sides: { name: 'Sides & Extras', icon: '🥗', image: '' },
+    sauces: { name: 'Sauces', icon: '🧄', image: '' },
+    drinks: { name: 'Drinks', icon: '🥤', image: '' }
 };
+
+// Load saved menu data from localStorage
+function loadMenuData() {
+    const savedMenu = localStorage.getItem('menuData');
+    const savedCategories = localStorage.getItem('categories');
+    if (savedMenu) {
+        try {
+            const parsed = JSON.parse(savedMenu);
+            // Merge with default menu to preserve structure
+            Object.keys(parsed).forEach(key => {
+                if (menuData[key]) {
+                    menuData[key] = parsed[key];
+                }
+            });
+        } catch(e) { console.log('Error loading menu data'); }
+    }
+    if (savedCategories) {
+        try {
+            const parsed = JSON.parse(savedCategories);
+            Object.keys(parsed).forEach(key => {
+                if (categories[key]) {
+                    categories[key] = { ...categories[key], ...parsed[key] };
+                } else {
+                    categories[key] = parsed[key];
+                }
+            });
+        } catch(e) { console.log('Error loading categories'); }
+    }
+}
+
+function saveMenuData() {
+    localStorage.setItem('menuData', JSON.stringify(menuData));
+    localStorage.setItem('categories', JSON.stringify(categories));
+}
 
 // ========================================
 // GLOBAL STATE
@@ -1094,6 +1226,7 @@ function loadData() {
         }
         updateFavoritesBadge();
         updateNotificationBadge();
+        updateOrdersBadge();
     }
     
     window.driverSystem.load();
@@ -1178,21 +1311,36 @@ function displayMenu(category) {
     
     const items = menuData[category] || [];
     items.forEach(item => {
+        // Skip unavailable items for regular users (show for owner)
+        if (item.available === false && !isOwnerLoggedIn) return;
+        
         const isFavorite = currentUser && userFavorites[currentUser.email]?.includes(item.id);
+        
+        // Determine image display: custom image > icon
+        const imageDisplay = item.image 
+            ? `<img src="${item.image}" alt="${item.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">` 
+            : item.icon;
+        
+        const unavailableStyle = item.available === false ? 'opacity: 0.5;' : '';
+        const unavailableBadge = item.available === false ? '<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(239,68,68,0.9); color: white; padding: 0.3rem 0.6rem; border-radius: 5px; font-size: 0.7rem; font-weight: 700;">UNAVAILABLE</span>' : '';
         
         const card = document.createElement('div');
         card.className = 'food-card';
+        card.style.cssText = unavailableStyle;
         card.innerHTML = `
             <button class="favorite-btn ${isFavorite ? 'active' : ''}" onclick="toggleFavorite(${item.id}, event)">
                 ${isFavorite ? '❤️' : '🤍'}
             </button>
-            <div class="food-image">${item.icon}</div>
+            <div class="food-image" style="position: relative;">
+                ${imageDisplay}
+                ${unavailableBadge}
+            </div>
             <div class="food-info">
                 <div class="food-name">${item.name}</div>
                 <div class="food-desc">${item.desc}</div>
                 <div class="food-footer">
                     <div class="food-price">${formatPrice(item.price)}</div>
-                    <button class="add-btn" onclick="openFoodModal(${item.id})">Order</button>
+                    ${item.available !== false ? `<button class="add-btn" onclick="openFoodModal(${item.id})">Order</button>` : '<span style="color: #ef4444; font-size: 0.8rem;">Not Available</span>'}
                 </div>
             </div>
         `;
@@ -1216,11 +1364,19 @@ function renderCategories() {
     categoriesContainer.innerHTML = '';
     
     Object.entries(categories).forEach(([key, cat], index) => {
+        // Only show categories that have items
+        if (!menuData[key] || menuData[key].length === 0) return;
+        
+        // Determine category image display
+        const catImageDisplay = cat.image 
+            ? `<img src="${cat.image}" alt="${cat.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">` 
+            : cat.icon;
+        
         const catEl = document.createElement('div');
         catEl.className = `category-item ${index === 0 ? 'active' : ''}`;
         catEl.onclick = () => filterCategory(key);
         catEl.innerHTML = `
-            <div class="category-icon">${cat.icon}</div>
+            <div class="category-icon">${catImageDisplay}</div>
             <div class="category-name">${cat.name}</div>
         `;
         categoriesContainer.appendChild(catEl);
@@ -1242,11 +1398,25 @@ function openFoodModal(foodId) {
     selectedFood = findFood(foodId);
     if (!selectedFood) return;
     
+    // Check if food is available
+    if (selectedFood.available === false) {
+        alert('❌ Sorry, this item is currently not available.');
+        return;
+    }
+    
     quantity = 1;
     selectedCustomizations = [];
     
     document.getElementById('modalFoodName').textContent = selectedFood.name;
-    document.getElementById('modalFoodIcon').textContent = selectedFood.icon;
+    
+    // Show image or icon
+    const iconContainer = document.getElementById('modalFoodIcon');
+    if (selectedFood.image) {
+        iconContainer.innerHTML = `<img src="${selectedFood.image}" alt="${selectedFood.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 12px;">`;
+    } else {
+        iconContainer.innerHTML = selectedFood.icon;
+    }
+    
     document.getElementById('modalFoodDesc').textContent = selectedFood.desc;
     document.getElementById('modalFoodPrice').textContent = formatPrice(selectedFood.price);
     document.getElementById('quantity').textContent = '1';
@@ -1272,7 +1442,7 @@ function openFoodModal(foodId) {
     }
     
     updateTotalPrice();
-    document.getElementById('foodModal').classList.add('active');
+    openModal('foodModal');
 }
 
 function toggleCustomization(index) {
@@ -1411,7 +1581,26 @@ function showFavorites() {
     
     const favIds = userFavorites[currentUser.email] || [];
     
-    if (favIds.length === 0) {
+    // Get existing items only (clean up deleted ones)
+    const favItems = [];
+    const validIds = [];
+    for (let cat of Object.keys(menuData)) {
+        menuData[cat].forEach(item => {
+            if (favIds.includes(item.id)) {
+                favItems.push(item);
+                validIds.push(item.id);
+            }
+        });
+    }
+    
+    // Clean up favorites if items were deleted
+    if (validIds.length !== favIds.length) {
+        userFavorites[currentUser.email] = validIds;
+        localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
+        updateFavoritesBadge();
+    }
+    
+    if (favItems.length === 0) {
         content.innerHTML = `
             <div style="text-align: center; padding: 3rem; color: rgba(255,255,255,0.5);">
                 <div style="font-size: 4rem;">💔</div>
@@ -1420,32 +1609,33 @@ function showFavorites() {
             </div>
         `;
     } else {
-        const favItems = [];
-        for (let cat of Object.keys(menuData)) {
-            menuData[cat].forEach(item => {
-                if (favIds.includes(item.id)) {
-                    favItems.push(item);
-                }
-            });
-        }
-        
         content.innerHTML = `
             <div class="menu-grid" style="grid-template-columns: 1fr;">
-                ${favItems.map(item => `
-                    <div class="food-card" style="display: grid; grid-template-columns: 80px 1fr auto; align-items: center; padding: 1rem;">
-                        <div style="font-size: 3rem;">${item.icon}</div>
+                ${favItems.map(item => {
+                    const isUnavailable = item.available === false;
+                    const imageDisplay = item.image 
+                        ? `<img src="${item.image}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">` 
+                        : `<span style="font-size: 2.5rem;">${item.icon}</span>`;
+                    
+                    return `
+                    <div class="food-card" style="display: grid; grid-template-columns: 70px 1fr auto; align-items: center; padding: 1rem; ${isUnavailable ? 'opacity: 0.5;' : ''}">
+                        <div style="display: flex; align-items: center; justify-content: center;">${imageDisplay}</div>
                         <div>
-                            <div class="food-name">${item.name}</div>
+                            <div class="food-name" style="${isUnavailable ? 'text-decoration: line-through;' : ''}">${item.name}</div>
                             <div class="food-price">${formatPrice(item.price)}</div>
+                            ${isUnavailable ? '<div style="color: #ef4444; font-size: 0.75rem; font-weight: 600;">NOT AVAILABLE</div>' : ''}
                         </div>
-                        <button class="add-btn" onclick="openFoodModal(${item.id}); closeModal('favoritesModal');">Order</button>
+                        ${isUnavailable 
+                            ? '<span style="color: #ef4444; font-size: 0.8rem;">Unavailable</span>'
+                            : `<button class="add-btn" onclick="openFoodModal(${item.id}); closeModal('favoritesModal');">Order</button>`
+                        }
                     </div>
-                `).join('')}
+                `}).join('')}
             </div>
         `;
     }
     
-    modal.classList.add('active');
+    openModal('favoritesModal');
 }
 
 // ========================================
@@ -1498,7 +1688,7 @@ function showCart() {
         if (cartTotal) cartTotal.textContent = formatPrice(total);
     }
     
-    modal.classList.add('active');
+    openModal('cartModal');
 }
 
 function updateCartItem(index, delta) {
@@ -1526,9 +1716,27 @@ function proceedToCheckout() {
         return;
     }
     
+    // Check if restaurant is open
+    const status = getRestaurantStatus();
+    if (!status.open) {
+        alert(`⚠️ Sorry, we're not accepting orders right now.\n\n${status.message}\n\nOpening hours: 11:00 - 23:00\nLast orders: 22:30`);
+        return;
+    }
+    
     if (!currentUser) {
         alert('❌ Please login first');
         showLogin();
+        return;
+    }
+    
+    // Check if user has an active order
+    const activeOrder = pendingOrders.find(o => 
+        o.userId === currentUser.email && 
+        ['pending', 'accepted', 'waiting_driver', 'out_for_delivery'].includes(o.status)
+    );
+    
+    if (activeOrder) {
+        alert(`⚠️ You already have an active order!\n\nOrder #${activeOrder.id}\nStatus: ${activeOrder.status.replace('_', ' ').toUpperCase()}\n\nPlease wait until your current order is delivered before placing a new one.`);
         return;
     }
     
@@ -1544,6 +1752,18 @@ function proceedToCheckout() {
     showLocationConfirmation();
 }
 
+// Check if user can order (no active orders)
+function userCanOrder() {
+    if (!currentUser) return false;
+    
+    const activeOrder = pendingOrders.find(o => 
+        o.userId === currentUser.email && 
+        ['pending', 'accepted', 'waiting_driver', 'out_for_delivery'].includes(o.status)
+    );
+    
+    return !activeOrder;
+}
+
 function showLocationConfirmation() {
     const modal = document.getElementById('locationConfirmModal');
     const addressDisplay = document.getElementById('confirmLocationAddress');
@@ -1551,8 +1771,7 @@ function showLocationConfirmation() {
     if (modal && addressDisplay) {
         const currentAddress = selectedLocation?.address || currentUser.address || 'No address set';
         addressDisplay.textContent = currentAddress;
-        modal.style.display = 'flex';
-        modal.classList.add('active');
+        openModal('locationConfirmModal');
     }
 }
 
@@ -1626,21 +1845,18 @@ function openCheckoutModal() {
         paymentTotal.textContent = formatPrice(total);
     }
     
-    const checkoutModal = document.getElementById('checkoutModal');
-    if (checkoutModal) {
-        checkoutModal.style.display = 'flex';
-        checkoutModal.classList.add('active');
-    }
+    openModal('checkoutModal');
 }
 
 function handlePayment(event) {
     event.preventDefault();
+    event.stopPropagation();
     
     const paymentMethod = document.getElementById('paymentMethod').value;
     
     if (!paymentMethod) {
         alert('❌ Please select a payment method');
-        return;
+        return false;
     }
     
     if (paymentMethod === 'card') {
@@ -1651,19 +1867,19 @@ function handlePayment(event) {
         
         if (!isValidCardNumber(cardNumber)) {
             alert('❌ Invalid card number');
-            return;
+            return false;
         }
         if (!cardName || cardName.length < 2) {
             alert('❌ Please enter name on card');
-            return;
+            return false;
         }
         if (!isValidExpiry(expiry)) {
             alert('❌ Invalid expiry date');
-            return;
+            return false;
         }
         if (!isValidCVV(cvv)) {
             alert('❌ Invalid CVV');
-            return;
+            return false;
         }
     }
     
@@ -1672,8 +1888,10 @@ function handlePayment(event) {
     const subtotal = cart.reduce((sum, item) => sum + (item.finalPrice * item.quantity), 0);
     let deliveryFee = 0;
     
+    // Calculate distance
+    let distance = 0;
     if (selectedLocation) {
-        const distance = calculateDistance(
+        distance = calculateDistance(
             UK_CONFIG.restaurant.lat,
             UK_CONFIG.restaurant.lng,
             selectedLocation.lat,
@@ -1692,7 +1910,8 @@ function handlePayment(event) {
         deliveryFee: deliveryFee,
         total: subtotal + deliveryFee,
         address: selectedLocation?.address || currentUser.address,
-        location: selectedLocation,
+        deliveryLocation: selectedLocation, // Save location for distance calculation
+        distance: distance, // Save distance in miles
         paymentMethod: paymentMethod,
         status: 'pending',
         createdAt: new Date().toISOString()
@@ -1716,12 +1935,20 @@ function handlePayment(event) {
     cart = [];
     saveCart();
     updateCartBadge();
+    updateOrdersBadge();
     
-    // Close checkout and show confirmation
-    closeModal('checkoutModal');
+    // Force close checkout modal
+    const checkoutModal = document.getElementById('checkoutModal');
+    if (checkoutModal) {
+        checkoutModal.style.display = 'none';
+        checkoutModal.classList.remove('active');
+    }
+    
     playNotificationSound();
     
     alert(`✅ Order Placed Successfully!\n\nOrder ID: ${orderId}\nTotal: ${formatPrice(order.total)}\n\nYou will receive updates on your order status.`);
+    
+    return false;
 }
 
 // ========================================
@@ -1770,16 +1997,55 @@ function showNotifications() {
             </div>
         `;
     } else {
-        content.innerHTML = notifications.map(n => `
-            <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 0.8rem; border-left: 3px solid #ff6b6b;">
-                <div style="font-weight: 600; margin-bottom: 0.3rem;">${n.title}</div>
-                <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">${n.message}</div>
-                <div style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 0.5rem;">${new Date(n.createdAt).toLocaleString()}</div>
-            </div>
-        `).join('');
+        content.innerHTML = notifications.map(n => {
+            // Special styling for driver on way notifications
+            if (n.type === 'driver_on_way') {
+                return `
+                    <div style="background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.2)); padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem; border: 2px solid rgba(16,185,129,0.4);">
+                        <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.1rem; color: #10b981;">${n.title}</div>
+                        <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 0.8rem;">
+                            <div style="margin-bottom: 0.5rem;">🚗 <strong>${n.driverName || 'Driver'}</strong></div>
+                            ${n.driverPhone ? `<div style="margin-bottom: 0.5rem;">📞 <a href="tel:${n.driverPhone}" style="color: #3b82f6;">${n.driverPhone}</a></div>` : ''}
+                            ${n.estimatedTime ? `<div style="color: #f59e0b; font-weight: 600; font-size: 1.1rem;">⏱️ Arriving in ~${n.estimatedTime} minutes</div>` : ''}
+                        </div>
+                        <button onclick="trackDriver('${n.orderId}'); closeModal('notificationsModal');" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 0.5rem;">
+                            📍 Track Driver Live
+                        </button>
+                        <div style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 0.5rem;">${new Date(n.createdAt).toLocaleString()}</div>
+                    </div>
+                `;
+            }
+            
+            // Order completed notification with rate button
+            if (n.type === 'order_completed' && n.driverId) {
+                return `
+                    <div style="background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.2)); padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem; border: 2px solid rgba(59,130,246,0.4);">
+                        <div style="font-weight: 700; margin-bottom: 0.5rem; font-size: 1.1rem; color: #3b82f6;">${n.title}</div>
+                        <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; white-space: pre-line; margin-bottom: 1rem;">${n.message}</div>
+                        <button onclick="openDriverRating('${n.orderId}', '${n.driverId}', '${n.driverName || 'Driver'}'); closeModal('notificationsModal');" style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">
+                            ⭐ Rate Driver
+                        </button>
+                        <div style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 0.5rem;">${new Date(n.createdAt).toLocaleString()}</div>
+                    </div>
+                `;
+            }
+            
+            // Default notification style
+            const borderColor = n.type === 'order_accepted' ? '#10b981' : 
+                               n.type === 'order_rejected' ? '#ef4444' : 
+                               n.type === 'order_completed' ? '#3b82f6' : '#ff6b6b';
+            
+            return `
+                <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 0.8rem; border-left: 3px solid ${borderColor};">
+                    <div style="font-weight: 600; margin-bottom: 0.3rem;">${n.title}</div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem; white-space: pre-line;">${n.message}</div>
+                    <div style="color: rgba(255,255,255,0.4); font-size: 0.8rem; margin-top: 0.5rem;">${new Date(n.createdAt).toLocaleString()}</div>
+                </div>
+            `;
+        }).join('');
     }
     
-    modal.classList.add('active');
+    openModal('notificationsModal');
 }
 
 // ========================================
@@ -1797,6 +2063,7 @@ function showAccount() {
     if (!modal || !content) return;
     
     const userOrders = orderHistory.filter(o => o.userId === currentUser.email);
+    const activeOrders = pendingOrders.filter(o => o.userId === currentUser.email && o.status === 'out_for_delivery');
     const totalSpent = userOrders.reduce((sum, o) => sum + o.total, 0);
     
     // Profile picture display
@@ -1805,92 +2072,185 @@ function showAccount() {
         : '👤';
     
     content.innerHTML = `
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div style="font-size: 3rem; margin-bottom: 0.5rem;">👤</div>
-            <h2 style="color: #ff6b6b; margin: 0;">My Account</h2>
-        </div>
-        
-        <div style="background: linear-gradient(135deg, #ff6b6b, #ee5a6f); padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 1.5rem;">
-            <div style="width: 100px; height: 100px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; overflow: hidden; border: 4px solid rgba(255,255,255,0.3);">
+        <div style="background: linear-gradient(135deg, #e63946, #c1121f); padding: 1.5rem; border-radius: 15px; text-align: center; margin-bottom: 1.5rem;">
+            <div style="width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto 0.8rem; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; overflow: hidden; border: 3px solid rgba(255,255,255,0.3);">
                 ${profilePic}
             </div>
-            <h3 style="margin: 0; color: white;">${currentUser.name}</h3>
-            <p style="margin: 0.5rem 0 0; color: rgba(255,255,255,0.8);">${currentUser.email}</p>
-            ${currentUser.age ? `<p style="margin: 0.3rem 0 0; color: rgba(255,255,255,0.7); font-size: 0.9rem;">Age: ${currentUser.age}</p>` : ''}
+            <h3 style="margin: 0; color: white; font-size: 1.2rem;">${currentUser.name}</h3>
+            <p style="margin: 0.3rem 0 0; color: rgba(255,255,255,0.8); font-size: 0.9rem;">${currentUser.email}</p>
+            ${currentUser.age ? `<p style="margin: 0.2rem 0 0; color: rgba(255,255,255,0.7); font-size: 0.85rem;">Age: ${currentUser.age}</p>` : ''}
         </div>
         
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-            <div style="background: rgba(16,185,129,0.1); padding: 1rem; border-radius: 10px; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">${userOrders.length}</div>
-                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Orders</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.2rem;">
+            <div style="background: rgba(42,157,143,0.15); padding: 0.8rem; border-radius: 10px; text-align: center; border: 1px solid rgba(42,157,143,0.3);">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #2a9d8f;">${userOrders.length}</div>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Orders</div>
             </div>
-            <div style="background: rgba(255,107,107,0.1); padding: 1rem; border-radius: 10px; text-align: center;">
-                <div style="font-size: 1.5rem; font-weight: 700; color: #ff6b6b;">${formatPrice(totalSpent)}</div>
-                <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">Total Spent</div>
+            <div style="background: rgba(230,57,70,0.15); padding: 0.8rem; border-radius: 10px; text-align: center; border: 1px solid rgba(230,57,70,0.3);">
+                <div style="font-size: 1.3rem; font-weight: 700; color: #e63946;">${formatPrice(totalSpent)}</div>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.6);">Total Spent</div>
             </div>
         </div>
         
         <!-- User Details -->
-        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+        <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 1.2rem; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
                 <span style="color: rgba(255,255,255,0.6);">📞 Phone</span>
                 <span>${currentUser.phone || 'Not set'}</span>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;">
                 <span style="color: rgba(255,255,255,0.6);">📍 Address</span>
-                <span>${currentUser.address || 'Not set'}</span>
+                <span style="text-align: right; max-width: 60%;">${currentUser.address || 'Not set'}</span>
             </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span style="color: rgba(255,255,255,0.6);">📅 Member Since</span>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem;">
+                <span style="color: rgba(255,255,255,0.6);">📅 Member</span>
                 <span>${currentUser.createdAt ? new Date(currentUser.createdAt).toLocaleDateString() : 'N/A'}</span>
             </div>
         </div>
         
-        <!-- Edit Buttons -->
-        <div style="display: grid; gap: 0.8rem; margin-bottom: 1.5rem;">
-            <button onclick="openEditProfile()" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+        <!-- Active Deliveries -->
+        ${activeOrders.length > 0 ? `
+            <div style="background: linear-gradient(135deg, rgba(42,157,143,0.2), rgba(42,157,143,0.1)); padding: 1rem; border-radius: 12px; margin-bottom: 1.2rem; border: 2px solid rgba(42,157,143,0.4);">
+                <h4 style="margin: 0 0 0.8rem 0; color: #2a9d8f; font-size: 0.95rem;">🚗 Active Delivery</h4>
+                ${activeOrders.map(o => `
+                    <div style="background: rgba(0,0,0,0.2); padding: 0.8rem; border-radius: 8px; margin-bottom: 0.5rem;">
+                        <div style="font-weight: 600; margin-bottom: 0.3rem;">#${o.id}</div>
+                        <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">Driver: ${o.driverName || 'Assigned'}</div>
+                        ${o.estimatedTime ? `<div style="font-size: 0.85rem; color: #f4a261;">ETA: ~${o.estimatedTime} mins</div>` : ''}
+                    </div>
+                    <button onclick="trackDriver('${o.id}')" style="background: linear-gradient(45deg, #2a9d8f, #218373); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; font-size: 0.9rem;">
+                        📍 Track Driver Live
+                    </button>
+                `).join('')}
+            </div>
+        ` : ''}
+        
+        <!-- Action Buttons -->
+        <div style="display: grid; gap: 0.6rem;">
+            <button onclick="openEditProfile()" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.9rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
                 ✏️ Edit Profile
             </button>
-            <button onclick="openChangeEmail()" style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <button onclick="openChangeEmail()" style="background: linear-gradient(45deg, #f4a261, #e76f51); color: white; border: none; padding: 0.9rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
                 📧 Change Email
             </button>
-            <button onclick="openChangePassword()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+            <button onclick="openChangePassword()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 0.9rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.95rem;">
                 🔒 Change Password
             </button>
         </div>
         
-        <!-- Recent Orders with Reorder -->
-        <h4 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">📦 Order History</h4>
-        ${userOrders.length === 0 ? '<p style="color: rgba(255,255,255,0.5); text-align: center;">No orders yet</p>' : 
-            userOrders.slice(0, 10).map(o => `
-                <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-bottom: 0.8rem;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="font-weight: 600;">#${o.id}</span>
-                        <span style="color: ${o.status === 'completed' ? '#10b981' : o.status === 'pending' ? '#f59e0b' : '#3b82f6'};">${o.status.toUpperCase()}</span>
-                    </div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.3rem;">${o.items.map(i => i.name).join(', ')}</div>
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">${o.items.length} items • </span>
-                            <span style="font-weight: 600; color: #10b981;">${formatPrice(o.total)}</span>
-                        </div>
-                        ${o.status === 'completed' ? `
-                            <button onclick="reorderFromHistory('${o.id}')" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
-                                🔄 Reorder
-                            </button>
-                        ` : ''}
-                    </div>
-                    <div style="font-size: 0.75rem; color: rgba(255,255,255,0.4); margin-top: 0.3rem;">${new Date(o.createdAt).toLocaleString()}</div>
-                </div>
-            `).join('')
-        }
-        
-        <button onclick="logout()" class="submit-btn" style="margin-top: 1.5rem; background: rgba(239,68,68,0.2); color: #ef4444; border: 2px solid #ef4444;">
+        <button onclick="logout()" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 2px solid #ef4444; padding: 0.9rem; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 1rem; font-size: 0.95rem;">
             🚪 Logout
         </button>
     `;
     
-    modal.classList.add('active');
+    openModal('accountModal');
+}
+
+// ========================================
+// ========================================
+// ORDER HISTORY (Separate from Account)
+// ========================================
+function showOrderHistory() {
+    if (!currentUser) {
+        showLogin();
+        return;
+    }
+    
+    const modal = document.getElementById('orderHistoryModal');
+    const content = document.getElementById('orderHistoryContent');
+    
+    if (!modal || !content) return;
+    
+    const userOrders = [...orderHistory.filter(o => o.userId === currentUser.email)];
+    const pendingUserOrders = pendingOrders.filter(o => o.userId === currentUser.email);
+    const allOrders = [...pendingUserOrders, ...userOrders].sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    
+    if (allOrders.length === 0) {
+        content.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                <p>No orders yet</p>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem;">Your order history will appear here</p>
+            </div>
+        `;
+    } else {
+        content.innerHTML = allOrders.map(o => {
+            const statusColor = o.status === 'completed' ? '#2a9d8f' : 
+                               o.status === 'pending' ? '#f4a261' : 
+                               o.status === 'out_for_delivery' ? '#3b82f6' : 
+                               o.status === 'accepted' || o.status === 'waiting_driver' ? '#2a9d8f' : '#ef4444';
+            
+            const statusText = o.status.replace(/_/g, ' ').toUpperCase();
+            const paymentIcon = o.paymentMethod === 'cash' ? '💷' : o.paymentMethod === 'applepay' ? '🍎' : '💳';
+            
+            // Get driver info for active deliveries only
+            const driver = o.status === 'out_for_delivery' && o.driverId ? window.driverSystem.get(o.driverId) : null;
+            
+            return `
+                <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-bottom: 0.8rem; border-left: 3px solid ${statusColor};">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+                        <span style="font-weight: 700; font-size: 0.95rem;">#${o.id}</span>
+                        <span style="color: ${statusColor}; font-size: 0.75rem; font-weight: 600; background: ${statusColor}20; padding: 0.2rem 0.6rem; border-radius: 10px;">${statusText}</span>
+                    </div>
+                    
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">
+                        ${o.items.map(i => `${i.name}`).join(', ')}
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">${o.items.length} items</span>
+                        <span style="font-weight: 700; color: #2a9d8f;">${formatPrice(o.total)}</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <span style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">${new Date(o.createdAt).toLocaleString()}</span>
+                        <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">${paymentIcon} ${o.paymentMethod || 'N/A'}</span>
+                    </div>
+                    
+                    ${o.driverRated ? `<div style="font-size: 0.75rem; color: #f4a261; margin-top: 0.4rem;">⭐ Rated ${o.driverRating}/5 ${o.driverRatingComment ? '- "' + o.driverRatingComment + '"' : ''}</div>` : ''}
+                    
+                    ${o.status === 'out_for_delivery' && driver ? `
+                        <div style="display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem; padding: 0.8rem; background: rgba(59,130,246,0.1); border-radius: 8px;">
+                            ${driver.profilePic ? `<img src="${driver.profilePic}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover;">` : '<div style="width: 45px; height: 45px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">🚗</div>'}
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 0.9rem;">${driver.name || o.driverName || 'Driver'}</div>
+                                <div style="font-size: 0.75rem; color: rgba(255,255,255,0.6);">On the way to you</div>
+                            </div>
+                        </div>
+                        <button onclick="trackDriver('${o.id}'); closeModal('orderHistoryModal');" style="background: linear-gradient(45deg, #2a9d8f, #218373); color: white; border: none; padding: 0.7rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 0.5rem; font-size: 0.9rem;">
+                            📍 Track Driver Live
+                        </button>
+                    ` : ''}
+                    
+                    ${o.status === 'completed' && o.driverId && !o.driverRated ? `
+                        <button onclick="openDriverRating('${o.id}', '${o.driverId}', '${o.driverName || 'Driver'}'); closeModal('orderHistoryModal');" style="background: linear-gradient(45deg, #f4a261, #e76f51); color: white; border: none; padding: 0.7rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 0.8rem; font-size: 0.9rem;">
+                            ⭐ Rate Driver
+                        </button>
+                    ` : ''}
+                    
+                    <button onclick="reorderFromHistory('${o.id}'); closeModal('orderHistoryModal');" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 0.6rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 0.5rem; font-size: 0.85rem;">
+                        🔄 Reorder
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    openModal('orderHistoryModal');
+}
+
+function updateOrdersBadge() {
+    const badge = document.getElementById('ordersBadge');
+    if (badge && currentUser) {
+        const activeOrders = pendingOrders.filter(o => 
+            o.userId === currentUser.email && 
+            ['pending', 'accepted', 'waiting_driver', 'out_for_delivery'].includes(o.status)
+        ).length;
+        badge.textContent = activeOrders;
+        badge.style.display = activeOrders > 0 ? 'flex' : 'none';
+    }
 }
 
 // ========================================
@@ -1923,13 +2283,27 @@ function reorderFromHistory(orderId) {
         totalDisplay.querySelector('span:last-child').textContent = formatPrice(order.total);
         
         closeModal('accountModal');
-        modal.style.display = 'flex';
-        modal.classList.add('active');
+        openModal('reorderModal');
     }
 }
 
 function confirmReorder() {
     if (!reorderData) return;
+    
+    // Check if any items are unavailable
+    const unavailableItems = [];
+    reorderData.items.forEach(item => {
+        const currentItem = findFood(item.id);
+        if (!currentItem || currentItem.available === false) {
+            unavailableItems.push(item.name);
+        }
+    });
+    
+    if (unavailableItems.length > 0) {
+        alert(`❌ Some items are no longer available:\n\n${unavailableItems.join('\n')}\n\nPlease order from the menu.`);
+        closeModal('reorderModal');
+        return;
+    }
     
     // Clear current cart
     cart = [];
@@ -1978,8 +2352,7 @@ function openEditProfile() {
         preview.innerHTML = '👤';
     }
     
-    modal.style.display = 'flex';
-    modal.classList.add('active');
+    openModal('editProfileModal');
 }
 
 function previewProfilePic(input) {
@@ -1997,6 +2370,7 @@ function previewProfilePic(input) {
 
 function saveProfileChanges(event) {
     event.preventDefault();
+    event.stopPropagation();
     
     const name = document.getElementById('editName').value.trim();
     const age = document.getElementById('editAge').value;
@@ -2007,14 +2381,19 @@ function saveProfileChanges(event) {
     
     if (!name) {
         alert('❌ Name is required');
-        return;
+        return false;
     }
     
     // Update current user
     currentUser.name = name;
     currentUser.age = age ? parseInt(age) : null;
     currentUser.phone = phone;
-    currentUser.address = address;
+    currentUser.address = address || (selectedLocation ? selectedLocation.address : currentUser.address);
+    
+    // Update location if selected
+    if (selectedLocation) {
+        currentUser.location = selectedLocation;
+    }
     
     if (newPic) {
         currentUser.profilePicture = newPic;
@@ -2030,10 +2409,18 @@ function saveProfileChanges(event) {
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
     saveData();
     
-    closeModal('editProfileModal');
+    // Force close modal
+    const modal = document.getElementById('editProfileModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
+    
+    // Show success and refresh account
+    alert('✅ Profile updated successfully!');
     showAccount();
     
-    alert('✅ Profile updated successfully!');
+    return false;
 }
 
 function openChangeEmail() {
@@ -2046,8 +2433,7 @@ function openChangeEmail() {
         document.getElementById('newEmail').value = '';
         document.getElementById('confirmNewEmail').value = '';
         
-        modal.style.display = 'flex';
-        modal.classList.add('active');
+        openModal('changeEmailModal');
     }
 }
 
@@ -2125,8 +2511,7 @@ function openChangePassword() {
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmNewPassword').value = '';
         
-        modal.style.display = 'flex';
-        modal.classList.add('active');
+        openModal('changePasswordModal');
     }
 }
 
@@ -2396,11 +2781,7 @@ function loginWithApple() {
 // RESTAURANT DASHBOARD (FOR EMPLOYERS)
 // ========================================
 function showRestaurantLogin() {
-    const modal = document.getElementById('restaurantLoginModal');
-    if (modal) {
-        modal.style.display = 'flex';
-        modal.classList.add('active');
-    }
+    openModal('restaurantLoginModal');
 }
 
 function handleRestaurantLogin(event) {
@@ -2435,29 +2816,28 @@ function showRestaurantDashboard() {
     const modal = document.getElementById('restaurantDashboard');
     if (!modal) return;
     
-    // Calculate MONTHLY stats (current month only)
+    // Calculate DAILY stats (today only)
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const today = now.toDateString();
     
-    // Filter orders from current month
-    const monthlyOrders = [...pendingOrders, ...orderHistory].filter(o => {
+    // Filter orders from today
+    const dailyOrders = [...pendingOrders, ...orderHistory].filter(o => {
         const orderDate = new Date(o.createdAt);
-        return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+        return orderDate.toDateString() === today;
     });
     
-    const monthlyRevenue = monthlyOrders.reduce((sum, o) => sum + o.total, 0);
+    const dailyRevenue = dailyOrders.reduce((sum, o) => sum + o.total, 0);
     const pendingCount = pendingOrders.filter(o => o.status === 'pending').length;
-    const completedCount = monthlyOrders.filter(o => o.status === 'completed').length;
+    const completedCount = dailyOrders.filter(o => o.status === 'completed').length;
     
-    // Update stats - Monthly only (no total revenue for staff)
-    const monthlyRevenueEl = document.getElementById('monthlyRevenueStat');
-    const monthlyOrdersEl = document.getElementById('monthlyOrdersStat');
+    // Update stats - Daily only (no total revenue for staff)
+    const dailyRevenueEl = document.getElementById('monthlyRevenueStat');
+    const dailyOrdersEl = document.getElementById('monthlyOrdersStat');
     const pendingOrdersEl = document.getElementById('pendingOrdersStat');
     const completedOrdersEl = document.getElementById('completedOrdersStat');
     
-    if (monthlyRevenueEl) monthlyRevenueEl.textContent = formatPrice(monthlyRevenue);
-    if (monthlyOrdersEl) monthlyOrdersEl.textContent = monthlyOrders.length;
+    if (dailyRevenueEl) dailyRevenueEl.textContent = formatPrice(dailyRevenue);
+    if (dailyOrdersEl) dailyOrdersEl.textContent = dailyOrders.length;
     if (pendingOrdersEl) pendingOrdersEl.textContent = pendingCount;
     if (completedOrdersEl) completedOrdersEl.textContent = completedCount;
     
@@ -2501,6 +2881,11 @@ function showRestaurantDashboard() {
                     
                     <div style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 1rem;">🕐 ${new Date(order.createdAt).toLocaleString()}</div>
                     
+                    <!-- Payment Method Badge -->
+                    <div style="background: ${order.paymentMethod === 'cash' ? 'rgba(245,158,11,0.2)' : order.paymentMethod === 'applepay' ? 'rgba(0,0,0,0.3)' : 'rgba(59,130,246,0.2)'}; padding: 0.5rem 1rem; border-radius: 8px; margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+                        ${order.paymentMethod === 'cash' ? '💷 CASH' : order.paymentMethod === 'applepay' ? '🍎 Apple Pay' : '💳 CARD'} ${order.paymentMethod === 'cash' ? '- Collect Payment' : '- PAID'}
+                    </div>
+                    
                     <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                         <div style="font-weight: 600; margin-bottom: 0.5rem;">Items:</div>
                         ${order.items.map(item => `
@@ -2516,13 +2901,22 @@ function showRestaurantDashboard() {
                     </div>
                     
                     ${order.status === 'pending' ? `
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
                             <button onclick="acceptOrder('${order.id}')" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">✅ Accept</button>
                             <button onclick="rejectOrder('${order.id}')" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">❌ Reject</button>
-                            <button onclick="assignDriver('${order.id}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">🚗 Driver</button>
                         </div>
                     ` : order.status === 'accepted' ? `
-                        <button onclick="assignDriver('${order.id}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%;">🚗 Assign Driver</button>
+                        <div style="display: grid; gap: 0.5rem;">
+                            <button onclick="notifyAllAvailableDrivers('${order.id}')" style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                                📢 Notify All Drivers
+                            </button>
+                            <button onclick="assignDriver('${order.id}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">🚗 Assign Specific Driver</button>
+                        </div>
+                    ` : order.status === 'driver_assigned' || order.status === 'out_for_delivery' ? `
+                        <div style="background: rgba(16,185,129,0.2); padding: 1rem; border-radius: 8px; text-align: center;">
+                            <div style="font-weight: 600; color: #10b981;">🚗 Driver: ${order.driverName || 'Assigned'}</div>
+                            ${order.estimatedTime ? `<div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">ETA: ${order.estimatedTime} mins</div>` : ''}
+                        </div>
                     ` : ''}
                 </div>
             `}).join('');
@@ -2537,6 +2931,7 @@ function acceptOrder(orderId) {
     if (!order) return;
     
     order.status = 'accepted';
+    order.acceptedAt = new Date().toISOString();
     saveData();
     
     // Send notification to customer
@@ -2550,15 +2945,17 @@ function acceptOrder(orderId) {
     playNotificationSound();
     showRestaurantDashboard();
     
-    // Ask to notify all available drivers
-    if (confirm(`✅ Order #${orderId} accepted!\n\nDo you want to notify ALL available drivers about this order?`)) {
-        notifyAllAvailableDrivers(orderId);
-    }
+    alert(`✅ Order #${orderId} accepted!\n\nClick "Notify All Drivers" to alert available drivers.`);
 }
 
 function notifyAllAvailableDrivers(orderId) {
     const order = pendingOrders.find(o => o.id === orderId);
     if (!order) return;
+    
+    if (order.driverId) {
+        alert('⚠️ This order already has a driver assigned!');
+        return;
+    }
     
     const availableDrivers = window.driverSystem.getAvailable();
     
@@ -2567,29 +2964,141 @@ function notifyAllAvailableDrivers(orderId) {
         return;
     }
     
-    // In a real app, this would send push notifications
-    // For now, we'll show an alert simulating notifications sent
-    let notifiedList = '📢 Notification sent to available drivers:\n\n';
+    // Mark order as waiting for driver
+    order.status = 'waiting_driver';
+    order.notifiedDrivers = availableDrivers.map(d => d.id);
+    saveData();
     
+    // Store available order for drivers
+    if (!window.availableOrdersForDrivers) {
+        window.availableOrdersForDrivers = {};
+    }
+    window.availableOrdersForDrivers[orderId] = {
+        orderId: orderId,
+        order: order,
+        notifiedAt: new Date().toISOString(),
+        claimedBy: null
+    };
+    
+    // Save to localStorage
+    localStorage.setItem('availableOrdersForDrivers', JSON.stringify(window.availableOrdersForDrivers));
+    
+    let notifiedList = '📢 Notification sent to available drivers:\n\n';
     availableDrivers.forEach(driver => {
         notifiedList += `✅ ${driver.name} (${driver.phone})\n`;
-        
-        // Store notification for driver (they would see this when they check their app)
-        if (!window.driverNotifications) {
-            window.driverNotifications = {};
-        }
-        if (!window.driverNotifications[driver.id]) {
-            window.driverNotifications[driver.id] = [];
-        }
-        window.driverNotifications[driver.id].push({
-            orderId: orderId,
-            message: `New order #${orderId} available! ${order.items.length} items - ${formatPrice(order.total)} - ${order.address}`,
-            time: new Date().toISOString()
-        });
     });
     
     playNotificationSound();
-    alert(notifiedList + `\n${availableDrivers.length} driver(s) notified!`);
+    showRestaurantDashboard();
+    alert(notifiedList + `\n${availableDrivers.length} driver(s) notified!\n\nFirst driver to accept will get the order.`);
+}
+
+// Calculate delivery time based on distance
+function calculateDeliveryTime(distanceMiles) {
+    // Base time: 10 minutes per mile
+    // Plus 5 minutes for preparation
+    const timePerMile = 10; // minutes
+    const prepTime = 5; // minutes
+    
+    const deliveryTime = Math.ceil(distanceMiles * timePerMile) + prepTime;
+    return deliveryTime;
+}
+
+// Calculate distance between two coordinates
+function getDistanceFromLatLng(lat1, lng1, lat2, lng2) {
+    const R = 3959; // Earth's radius in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// Driver accepts order
+function driverAcceptOrder(orderId) {
+    const driverId = sessionStorage.getItem('loggedInDriver');
+    if (!driverId) {
+        alert('❌ Please login first');
+        return;
+    }
+    
+    const driver = window.driverSystem.get(driverId);
+    if (!driver) return;
+    
+    // Check if order is still available
+    const availableOrder = window.availableOrdersForDrivers?.[orderId];
+    if (!availableOrder) {
+        alert('❌ This order is no longer available!');
+        showDriverDashboard();
+        return;
+    }
+    
+    if (availableOrder.claimedBy && availableOrder.claimedBy !== driverId) {
+        alert('❌ Sorry, another driver already accepted this order!');
+        showDriverDashboard();
+        return;
+    }
+    
+    // Find the actual order
+    const order = pendingOrders.find(o => o.id === orderId);
+    if (!order) {
+        alert('❌ Order not found!');
+        return;
+    }
+    
+    // Mark order as claimed by this driver
+    availableOrder.claimedBy = driverId;
+    
+    // Calculate distance from restaurant to customer
+    let distanceMiles = 2; // Default
+    let estimatedTime = 25; // Default
+    
+    if (order.deliveryLocation && order.deliveryLocation.lat) {
+        distanceMiles = getDistanceFromLatLng(
+            UK_CONFIG.restaurant.lat,
+            UK_CONFIG.restaurant.lng,
+            order.deliveryLocation.lat,
+            order.deliveryLocation.lng
+        );
+        estimatedTime = calculateDeliveryTime(distanceMiles);
+    } else if (order.distance) {
+        distanceMiles = order.distance;
+        estimatedTime = calculateDeliveryTime(distanceMiles);
+    }
+    
+    // Update order
+    order.driverId = driverId;
+    order.driverName = driver.name;
+    order.driverPhone = driver.phone;
+    order.status = 'out_for_delivery';
+    order.driverAcceptedAt = new Date().toISOString();
+    order.estimatedTime = estimatedTime;
+    order.distanceMiles = distanceMiles.toFixed(1);
+    
+    // Remove from available orders
+    delete window.availableOrdersForDrivers[orderId];
+    localStorage.setItem('availableOrdersForDrivers', JSON.stringify(window.availableOrdersForDrivers));
+    
+    saveData();
+    
+    // Notify customer with driver info and ETA
+    addNotification(order.userId, {
+        type: 'driver_on_way',
+        title: '🚗 Driver On The Way!',
+        message: `${driver.name} is delivering your order #${orderId}.\n📞 ${driver.phone}\n⏱️ Estimated arrival: ${estimatedTime} minutes\n📍 Distance: ${distanceMiles.toFixed(1)} miles`,
+        orderId: orderId,
+        driverName: driver.name,
+        driverPhone: driver.phone,
+        estimatedTime: estimatedTime
+    });
+    
+    playNotificationSound();
+    
+    alert(`✅ Order #${orderId} accepted!\n\n📍 Distance: ${distanceMiles.toFixed(1)} miles\n⏱️ Estimated time: ${estimatedTime} minutes\n\nClick "Directions" to navigate to customer.`);
+    
+    showDriverDashboard();
 }
 
 function rejectOrder(orderId) {
@@ -3023,11 +3532,7 @@ function loadBankDetails() {
 // OWNER ACCESS (FULL SYSTEM)
 // ========================================
 function showOwnerLogin() {
-    const modal = document.getElementById('ownerModal');
-    if (modal) {
-        modal.classList.add('active');
-        modal.style.display = 'flex';
-    }
+    openModal('ownerModal');
 }
 
 function handleOwnerLogin() {
@@ -3060,6 +3565,384 @@ function updateOwnerStats() {
     document.getElementById('usersStat').textContent = totalUsers;
     document.getElementById('driverCountStat').textContent = totalDrivers;
     document.getElementById('driversRegisteredText').textContent = `${totalDrivers} drivers registered`;
+}
+
+// ========================================
+// OWNER MENU MANAGEMENT SYSTEM
+// ========================================
+let editingFoodId = null;
+let editingCategory = null;
+
+function openMenuManager() {
+    const modal = document.getElementById('menuManagerModal');
+    if (modal) {
+        renderMenuManagerList();
+        modal.style.display = 'flex';
+    }
+}
+
+function renderMenuManagerList() {
+    const container = document.getElementById('menuManagerContent');
+    if (!container) return;
+    
+    container.innerHTML = `
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <button onclick="openAddCategory()" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); color: white; border: none; padding: 0.8rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                ➕ Add Category
+            </button>
+            <button onclick="openAddFood()" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.8rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                🍽️ Add Food Item
+            </button>
+        </div>
+        
+        ${Object.entries(categories).map(([catKey, cat]) => `
+            <div style="background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 1rem; overflow: hidden;">
+                <div style="background: rgba(139,92,246,0.2); padding: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem;">
+                        ${cat.image ? `<img src="${cat.image}" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">` : `<span style="font-size: 1.5rem;">${cat.icon}</span>`}
+                        <span style="font-weight: 700;">${cat.name}</span>
+                        <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">(${menuData[catKey]?.length || 0} items)</span>
+                    </div>
+                    <button onclick="openEditCategory('${catKey}')" style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 0.5rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                        ✏️ Edit
+                    </button>
+                </div>
+                
+                <div style="padding: 0.5rem;">
+                    ${(menuData[catKey] || []).map(item => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.8rem; border-bottom: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap; gap: 0.5rem;">
+                            <div style="display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 200px;">
+                                ${item.image ? `<img src="${item.image}" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">` : `<span style="font-size: 1.3rem;">${item.icon}</span>`}
+                                <div>
+                                    <div style="font-weight: 600; ${item.available === false ? 'text-decoration: line-through; opacity: 0.5;' : ''}">${item.name}</div>
+                                    <div style="font-size: 0.85rem; color: #10b981;">${formatPrice(item.price)}</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 0.3rem;">
+                                <button onclick="toggleFoodAvailability('${catKey}', ${item.id})" style="background: ${item.available !== false ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}; color: ${item.available !== false ? '#10b981' : '#ef4444'}; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                                    ${item.available !== false ? '✅' : '❌'}
+                                </button>
+                                <button onclick="openEditFood('${catKey}', ${item.id})" style="background: rgba(59,130,246,0.2); color: #3b82f6; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                                    ✏️
+                                </button>
+                                <button onclick="deleteFood('${catKey}', ${item.id})" style="background: rgba(239,68,68,0.2); color: #ef4444; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('')}
+    `;
+}
+
+function toggleFoodAvailability(catKey, foodId) {
+    const item = menuData[catKey]?.find(i => i.id === foodId);
+    if (item) {
+        item.available = item.available === false ? true : false;
+        saveMenuData();
+        renderMenuManagerList();
+        displayMenu(currentCategory);
+    }
+}
+
+function openAddFood() {
+    editingFoodId = null;
+    editingCategory = null;
+    
+    const modal = document.getElementById('foodEditorModal');
+    if (modal) {
+        document.getElementById('foodEditorTitle').textContent = 'Add New Food';
+        document.getElementById('foodEditCategory').value = '';
+        document.getElementById('foodEditName').value = '';
+        document.getElementById('foodEditPrice').value = '';
+        document.getElementById('foodEditIcon').value = '🍽️';
+        document.getElementById('foodEditDesc').value = '';
+        document.getElementById('foodEditOptions').value = '';
+        document.getElementById('foodEditImage').value = '';
+        document.getElementById('foodEditImagePreview').innerHTML = '';
+        modal.style.display = 'flex';
+    }
+}
+
+function openEditFood(catKey, foodId) {
+    const item = menuData[catKey]?.find(i => i.id === foodId);
+    if (!item) return;
+    
+    editingFoodId = foodId;
+    editingCategory = catKey;
+    
+    const modal = document.getElementById('foodEditorModal');
+    if (modal) {
+        document.getElementById('foodEditorTitle').textContent = 'Edit Food Item';
+        document.getElementById('foodEditCategory').value = catKey;
+        document.getElementById('foodEditName').value = item.name;
+        document.getElementById('foodEditPrice').value = item.price;
+        document.getElementById('foodEditIcon').value = item.icon || '🍽️';
+        document.getElementById('foodEditDesc').value = item.desc || '';
+        document.getElementById('foodEditOptions').value = item.options ? item.options.map(o => `${o.name}:${o.price}`).join('\n') : '';
+        document.getElementById('foodEditImage').value = item.image || '';
+        document.getElementById('foodEditImagePreview').innerHTML = item.image ? `<img src="${item.image}" style="max-width: 100px; max-height: 100px; border-radius: 8px;">` : '';
+        modal.style.display = 'flex';
+    }
+}
+
+function saveFoodItem() {
+    const category = document.getElementById('foodEditCategory').value;
+    const name = document.getElementById('foodEditName').value.trim();
+    const price = parseFloat(document.getElementById('foodEditPrice').value);
+    const icon = document.getElementById('foodEditIcon').value || '🍽️';
+    const desc = document.getElementById('foodEditDesc').value.trim();
+    const optionsText = document.getElementById('foodEditOptions').value.trim();
+    const image = document.getElementById('foodEditImage').value.trim();
+    
+    if (!category || !name || isNaN(price)) {
+        alert('❌ Please fill category, name and price');
+        return;
+    }
+    
+    // Parse options
+    const options = optionsText ? optionsText.split('\n').map(line => {
+        const [optName, optPrice] = line.split(':');
+        return { name: optName?.trim() || '', price: parseFloat(optPrice) || 0 };
+    }).filter(o => o.name) : [];
+    
+    if (editingFoodId && editingCategory) {
+        // Edit existing
+        const item = menuData[editingCategory]?.find(i => i.id === editingFoodId);
+        if (item) {
+            // If category changed, move item
+            if (editingCategory !== category) {
+                menuData[editingCategory] = menuData[editingCategory].filter(i => i.id !== editingFoodId);
+                if (!menuData[category]) menuData[category] = [];
+                menuData[category].push({ ...item, name, price, icon, desc, options, image, available: item.available });
+            } else {
+                item.name = name;
+                item.price = price;
+                item.icon = icon;
+                item.desc = desc;
+                item.options = options;
+                item.image = image;
+            }
+        }
+    } else {
+        // Add new
+        if (!menuData[category]) menuData[category] = [];
+        const newId = Date.now();
+        menuData[category].push({
+            id: newId,
+            name,
+            price,
+            icon,
+            image,
+            desc,
+            options,
+            available: true
+        });
+    }
+    
+    saveMenuData();
+    closeFoodEditor();
+    renderMenuManagerList();
+    renderCategories();
+    displayMenu(currentCategory);
+    alert('✅ Food item saved!');
+}
+
+function deleteFood(catKey, foodId) {
+    if (!confirm('Are you sure you want to delete this food item?')) return;
+    
+    // Remove from menu
+    menuData[catKey] = menuData[catKey].filter(i => i.id !== foodId);
+    
+    // Clean up favorites for all users
+    Object.keys(userFavorites).forEach(userEmail => {
+        userFavorites[userEmail] = userFavorites[userEmail].filter(id => id !== foodId);
+    });
+    localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
+    
+    // Clean up cart if item is there
+    cart = cart.filter(item => item.id !== foodId);
+    if (currentUser) {
+        localStorage.setItem('cart_' + currentUser.email, JSON.stringify(cart));
+    }
+    
+    saveMenuData();
+    renderMenuManagerList();
+    displayMenu(currentCategory);
+    updateFavoritesBadge();
+    updateCartBadge();
+}
+
+function closeFoodEditor() {
+    const modal = document.getElementById('foodEditorModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function openAddCategory() {
+    editingCategory = null;
+    
+    const modal = document.getElementById('categoryEditorModal');
+    if (modal) {
+        document.getElementById('categoryEditorTitle').textContent = 'Add New Category';
+        document.getElementById('categoryEditKey').value = '';
+        document.getElementById('categoryEditKey').disabled = false;
+        document.getElementById('categoryEditName').value = '';
+        document.getElementById('categoryEditIcon').value = '🍽️';
+        document.getElementById('categoryEditImage').value = '';
+        document.getElementById('categoryEditImagePreview').innerHTML = '';
+        document.getElementById('deleteCategoryBtn').style.display = 'none';
+        modal.style.display = 'flex';
+    }
+}
+
+function openEditCategory(catKey) {
+    const cat = categories[catKey];
+    if (!cat) return;
+    
+    editingCategory = catKey;
+    
+    const modal = document.getElementById('categoryEditorModal');
+    if (modal) {
+        document.getElementById('categoryEditorTitle').textContent = 'Edit Category';
+        document.getElementById('categoryEditKey').value = catKey;
+        document.getElementById('categoryEditKey').disabled = true;
+        document.getElementById('categoryEditName').value = cat.name;
+        document.getElementById('categoryEditIcon').value = cat.icon || '🍽️';
+        document.getElementById('categoryEditImage').value = cat.image || '';
+        document.getElementById('categoryEditImagePreview').innerHTML = cat.image ? `<img src="${cat.image}" style="max-width: 100px; max-height: 100px; border-radius: 8px;">` : '';
+        document.getElementById('deleteCategoryBtn').style.display = 'block';
+        modal.style.display = 'flex';
+    }
+}
+
+function deleteCategory() {
+    if (!editingCategory) return;
+    
+    const itemCount = menuData[editingCategory]?.length || 0;
+    if (!confirm(`Are you sure you want to delete this category?\n\nThis will also delete ${itemCount} food items in it.`)) return;
+    
+    // Remove all food items from favorites
+    if (menuData[editingCategory]) {
+        menuData[editingCategory].forEach(item => {
+            Object.keys(userFavorites).forEach(userEmail => {
+                userFavorites[userEmail] = userFavorites[userEmail].filter(id => id !== item.id);
+            });
+        });
+        localStorage.setItem('userFavorites', JSON.stringify(userFavorites));
+    }
+    
+    // Delete category and its food items
+    delete menuData[editingCategory];
+    delete categories[editingCategory];
+    
+    saveMenuData();
+    closeCategoryEditor();
+    renderMenuManagerList();
+    renderCategories();
+    
+    // Switch to first available category
+    const firstCat = Object.keys(categories)[0];
+    if (firstCat) {
+        displayMenu(firstCat);
+    }
+    
+    updateFavoritesBadge();
+    alert('✅ Category deleted');
+}
+
+// Image upload handlers
+function handleFoodImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 2 * 1024 * 1024) {
+        alert('❌ Image must be less than 2MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('foodEditImage').value = e.target.result;
+        previewFoodImage();
+    };
+    reader.readAsDataURL(file);
+}
+
+function handleCategoryImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    if (file.size > 2 * 1024 * 1024) {
+        alert('❌ Image must be less than 2MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('categoryEditImage').value = e.target.result;
+        previewCategoryImage();
+    };
+    reader.readAsDataURL(file);
+}
+
+function saveCategory() {
+    const key = document.getElementById('categoryEditKey').value.trim().toLowerCase().replace(/\s+/g, '_');
+    const name = document.getElementById('categoryEditName').value.trim();
+    const icon = document.getElementById('categoryEditIcon').value || '🍽️';
+    const image = document.getElementById('categoryEditImage').value.trim();
+    
+    if (!key || !name) {
+        alert('❌ Please fill key and name');
+        return;
+    }
+    
+    if (editingCategory) {
+        // Edit existing
+        categories[editingCategory].name = name;
+        categories[editingCategory].icon = icon;
+        categories[editingCategory].image = image;
+    } else {
+        // Add new
+        if (categories[key]) {
+            alert('❌ Category key already exists');
+            return;
+        }
+        categories[key] = { name, icon, image };
+        if (!menuData[key]) menuData[key] = [];
+    }
+    
+    saveMenuData();
+    closeCategoryEditor();
+    renderMenuManagerList();
+    renderCategories();
+    alert('✅ Category saved!');
+}
+
+function closeCategoryEditor() {
+    const modal = document.getElementById('categoryEditorModal');
+    if (modal) modal.style.display = 'none';
+}
+
+function previewFoodImage() {
+    const url = document.getElementById('foodEditImage').value.trim();
+    const preview = document.getElementById('foodEditImagePreview');
+    if (url && preview) {
+        preview.innerHTML = `<img src="${url}" style="max-width: 100px; max-height: 100px; border-radius: 8px;" onerror="this.parentElement.innerHTML='Invalid URL'">`;
+    } else if (preview) {
+        preview.innerHTML = '';
+    }
+}
+
+function previewCategoryImage() {
+    const url = document.getElementById('categoryEditImage').value.trim();
+    const preview = document.getElementById('categoryEditImagePreview');
+    if (url && preview) {
+        preview.innerHTML = `<img src="${url}" style="max-width: 100px; max-height: 100px; border-radius: 8px;" onerror="this.parentElement.innerHTML='Invalid URL'">`;
+    } else if (preview) {
+        preview.innerHTML = '';
+    }
 }
 
 // ========================================
@@ -3188,70 +4071,198 @@ function showDriverDashboard(driver = null) {
     const content = document.getElementById('driverDashboardContent');
     if (!modal || !content) return;
     
+    // Load available orders from localStorage
+    const savedAvailableOrders = localStorage.getItem('availableOrdersForDrivers');
+    if (savedAvailableOrders) {
+        window.availableOrdersForDrivers = JSON.parse(savedAvailableOrders);
+    }
+    
     // Get driver's assigned orders
     const assignedOrders = pendingOrders.filter(o => o.driverId === driver.id);
+    
+    // Get available orders for this driver
+    const availableOrders = [];
+    if (window.availableOrdersForDrivers) {
+        Object.keys(window.availableOrdersForDrivers).forEach(orderId => {
+            const orderData = window.availableOrdersForDrivers[orderId];
+            if (!orderData.claimedBy) {
+                const order = pendingOrders.find(o => o.id === orderId);
+                if (order && order.status === 'waiting_driver') {
+                    availableOrders.push(order);
+                }
+            }
+        });
+    }
     
     const profilePic = driver.profilePicture 
         ? `<img src="${driver.profilePicture}" style="width: 100%; height: 100%; object-fit: cover;">` 
         : '🚗';
     
     content.innerHTML = `
-        <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2rem; border-radius: 15px; text-align: center; margin-bottom: 2rem;">
-            <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; font-size: 2rem; overflow: hidden; border: 3px solid rgba(255,255,255,0.3);">
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 1.5rem; border-radius: 15px; text-align: center; margin-bottom: 1.5rem; position: relative;">
+            <button onclick="confirmLogoutDriver()" style="position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;">✕</button>
+            
+            <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(255,255,255,0.2); margin: 0 auto 0.8rem; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; overflow: hidden; border: 3px solid rgba(255,255,255,0.3);">
                 ${profilePic}
             </div>
-            <h2 style="margin: 0; color: white;">${driver.name}</h2>
-            <p style="margin: 0.5rem 0 0; color: rgba(255,255,255,0.8);">${driver.secretCode}</p>
+            <h2 style="margin: 0; color: white; font-size: 1.3rem;">${driver.name}</h2>
+            <p style="margin: 0.3rem 0 0; color: rgba(255,255,255,0.8); font-size: 0.9rem;">${driver.secretCode}</p>
+            
             <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem;">
-                <div><span style="font-size: 1.5rem; font-weight: 700;">${driver.deliveries || 0}</span><br><span style="font-size: 0.85rem; opacity: 0.9;">Deliveries</span></div>
-                <div><span style="font-size: 1.5rem; font-weight: 700;">⭐ ${driver.rating || 5.0}</span><br><span style="font-size: 0.85rem; opacity: 0.9;">Rating</span></div>
+                <div><span style="font-size: 1.3rem; font-weight: 700;">${driver.deliveries || 0}</span><br><span style="font-size: 0.8rem; opacity: 0.9;">Deliveries</span></div>
+                <div><span style="font-size: 1.3rem; font-weight: 700;">⭐ ${driver.rating || 5.0}</span><br><span style="font-size: 0.8rem; opacity: 0.9;">Rating</span></div>
+            </div>
+            
+            <div style="margin-top: 1rem;">
+                <span style="background: ${driver.available ? 'rgba(255,255,255,0.3)' : 'rgba(239,68,68,0.5)'}; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                    ${driver.available ? '🟢 Online' : '🔴 Offline'}
+                </span>
             </div>
         </div>
         
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
-            <button onclick="toggleDriverAvailability()" style="flex: 1; background: ${driver.available ? 'linear-gradient(45deg, #f59e0b, #d97706)' : 'linear-gradient(45deg, #10b981, #059669)'}; color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600;">
+        <!-- Status Toggle -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-bottom: 1.5rem;">
+            <button onclick="toggleDriverAvailability()" style="background: ${driver.available ? 'linear-gradient(45deg, #ef4444, #dc2626)' : 'linear-gradient(45deg, #10b981, #059669)'}; color: white; border: none; padding: 1rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem;">
                 ${driver.available ? '⏸️ Go Offline' : '▶️ Go Online'}
             </button>
-            <button onclick="updateDriverLocation()" style="flex: 1; background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600;">
+            <button onclick="updateDriverLocation()" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 1rem;">
                 📍 Update Location
             </button>
         </div>
         
-        <h3 style="color: white; margin-bottom: 1rem;">📦 Assigned Orders (${assignedOrders.length})</h3>
+        <!-- Available Orders Section -->
+        ${driver.available && availableOrders.length > 0 ? `
+            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <h3 style="color: white; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                    🔔 New Orders Available (${availableOrders.length})
+                </h3>
+                ${availableOrders.map(order => `
+                    <div style="background: rgba(255,255,255,0.15); padding: 1rem; border-radius: 10px; margin-bottom: 0.8rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                            <span style="font-weight: 700; font-size: 1.1rem; color: white;">#${order.id}</span>
+                            <span style="font-weight: 700; color: white; font-size: 1.1rem;">${formatPrice(order.total)}</span>
+                        </div>
+                        <div style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-bottom: 0.8rem;">
+                            <div>📍 ${order.address || 'Address pending'}</div>
+                            <div>📦 ${order.items.length} item(s)</div>
+                        </div>
+                        <button onclick="driverAcceptOrder('${order.id}')" style="background: white; color: #d97706; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; font-size: 1rem;">
+                            ✅ ACCEPT ORDER
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+        ` : driver.available ? `
+            <div style="background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem;">📡</div>
+                <p style="color: rgba(255,255,255,0.7); margin: 0.5rem 0 0;">Waiting for new orders...</p>
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 0.3rem 0 0;">You'll be notified when orders are available</p>
+            </div>
+        ` : `
+            <div style="background: rgba(239,68,68,0.1); padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 1.5rem; border: 2px solid rgba(239,68,68,0.3);">
+                <div style="font-size: 3rem;">🔴</div>
+                <p style="color: #ef4444; font-weight: 600; margin: 0.5rem 0 0;">You're Offline</p>
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 0.3rem 0 0;">Go online to receive orders</p>
+            </div>
+        `}
+        
+        <!-- My Deliveries Section -->
+        <h3 style="color: white; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            🚗 My Deliveries (${assignedOrders.length})
+        </h3>
         
         ${assignedOrders.length === 0 ? `
-            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
-                <div style="font-size: 3rem;">📦</div>
-                <p>No orders assigned yet</p>
-                <p style="font-size: 0.85rem;">Stay online to receive delivery requests!</p>
+            <div style="background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 2.5rem;">📦</div>
+                <p style="color: rgba(255,255,255,0.5); margin: 0.5rem 0 0;">No active deliveries</p>
             </div>
         ` : assignedOrders.map(order => `
-            <div style="background: rgba(255,255,255,0.05); padding: 1.5rem; border-radius: 12px; margin-bottom: 1rem; border-left: 4px solid #3b82f6;">
+            <div style="background: rgba(59,130,246,0.1); padding: 1.2rem; border-radius: 12px; margin-bottom: 1rem; border: 2px solid rgba(59,130,246,0.3);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <span style="font-weight: 700; font-size: 1.1rem;">#${order.id}</span>
-                    <span style="background: rgba(59,130,246,0.2); color: #3b82f6; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${order.status.toUpperCase()}</span>
+                    <span style="font-weight: 700; font-size: 1.1rem; color: white;">#${order.id}</span>
+                    <span style="background: rgba(59,130,246,0.3); color: #3b82f6; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">
+                        ${order.status === 'out_for_delivery' ? '🚗 EN ROUTE' : order.status.toUpperCase()}
+                    </span>
                 </div>
                 
-                <div style="margin-bottom: 1rem; font-size: 0.95rem;">
-                    <div style="margin-bottom: 0.5rem;">👤 <strong>${order.userName}</strong></div>
-                    <div style="margin-bottom: 0.5rem;">📞 ${order.userPhone || 'N/A'}</div>
-                    <div style="margin-bottom: 0.5rem;">📍 ${order.address || 'N/A'}</div>
-                    <div style="margin-bottom: 0.5rem;">💰 <strong style="color: #10b981;">${formatPrice(order.total)}</strong></div>
+                <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="margin-bottom: 0.5rem; font-size: 1rem;">
+                        👤 <strong>${order.userName}</strong>
+                    </div>
+                    <div style="margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">
+                        📞 <a href="tel:${order.userPhone}" style="color: #3b82f6; text-decoration: none;">${order.userPhone || 'N/A'}</a>
+                    </div>
+                    <div style="margin-bottom: 0.5rem; color: rgba(255,255,255,0.8);">
+                        📍 ${order.address || 'N/A'}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <span style="color: rgba(255,255,255,0.6);">💰 Total:</span>
+                        <span style="font-weight: 700; color: #10b981; font-size: 1.1rem;">${formatPrice(order.total)}</span>
+                    </div>
+                    ${order.distanceMiles ? `
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                            <span style="color: rgba(255,255,255,0.6);">📏 Distance:</span>
+                            <span style="color: white;">${order.distanceMiles} miles</span>
+                        </div>
+                    ` : ''}
+                    ${order.estimatedTime ? `
+                        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem;">
+                            <span style="color: rgba(255,255,255,0.6);">⏱️ ETA:</span>
+                            <span style="color: #f59e0b; font-weight: 600;">${order.estimatedTime} mins</span>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Payment Method for Driver -->
+                    <div style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="background: ${order.paymentMethod === 'cash' ? 'rgba(245,158,11,0.3)' : 'rgba(42,157,143,0.3)'}; padding: 0.6rem; border-radius: 8px; text-align: center; font-weight: 700; color: ${order.paymentMethod === 'cash' ? '#f4a261' : '#2a9d8f'};">
+                            ${order.paymentMethod === 'cash' ? '💷 CASH - Collect £' + order.total.toFixed(2) : order.paymentMethod === 'applepay' ? '🍎 Apple Pay - PAID' : '💳 Card - PAID'}
+                        </div>
+                    </div>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                    <button onclick="openDirections('${encodeURIComponent(order.address)}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">🗺️ Directions</button>
-                    <button onclick="markOrderDelivered('${order.id}')" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600;">✅ Delivered</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                    <button onclick="openDirections('${encodeURIComponent(order.address)}')" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                        🗺️ Directions
+                    </button>
+                    <button onclick="markOrderDelivered('${order.id}')" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 1rem;">
+                        ✅ Delivered
+                    </button>
                 </div>
+                
+                <button onclick="callCustomer('${order.userPhone}')" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.8rem; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 0.8rem;">
+                    📞 Call Customer
+                </button>
             </div>
         `).join('')}
         
-        <button onclick="logoutDriver()" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 2px solid #ef4444; padding: 1rem; border-radius: 10px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 1rem;">
+        <!-- Logout Button -->
+        <button onclick="confirmLogoutDriver()" style="background: rgba(239,68,68,0.2); color: #ef4444; border: 2px solid #ef4444; padding: 1.2rem; border-radius: 12px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 1rem; font-size: 1rem;">
             🚪 Logout
+        </button>
+        
+        <!-- Refresh Button -->
+        <button onclick="showDriverDashboard()" style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.2); padding: 0.8rem; border-radius: 10px; cursor: pointer; width: 100%; margin-top: 0.8rem;">
+            🔄 Refresh
         </button>
     `;
     
-    openModal('driverDashboardModal');
+    // Show fullscreen dashboard
+    modal.style.display = 'block';
+}
+
+function callCustomer(phone) {
+    if (phone && phone !== 'N/A') {
+        window.location.href = 'tel:' + phone;
+    } else {
+        alert('❌ Customer phone number not available');
+    }
+}
+
+function confirmLogoutDriver() {
+    if (confirm('🚪 Are you sure you want to logout?\n\nYou will stop receiving new orders.')) {
+        logoutDriver();
+    }
 }
 
 function toggleDriverAvailability() {
@@ -3274,25 +4285,84 @@ function updateDriverLocation() {
         return;
     }
     
+    const driverId = sessionStorage.getItem('loggedInDriver');
+    if (!driverId) {
+        alert('❌ Please login first');
+        return;
+    }
+    
     navigator.geolocation.getCurrentPosition(
         (position) => {
-            const driverId = sessionStorage.getItem('loggedInDriver');
-            if (driverId) {
-                window.driverSystem.update(driverId, {
-                    currentLocation: {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        updatedAt: new Date().toISOString()
-                    }
-                });
-                alert('✅ Location updated successfully!');
-            }
+            const locationData = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Update driver's location in system
+            window.driverSystem.update(driverId, {
+                currentLocation: locationData
+            });
+            
+            // Save to localStorage for customer tracking
+            const liveLocations = JSON.parse(localStorage.getItem('driverLiveLocations') || '{}');
+            liveLocations[driverId] = locationData;
+            localStorage.setItem('driverLiveLocations', JSON.stringify(liveLocations));
+            
+            alert('✅ Location updated!\n\nCustomers can now see your live location.');
+            showDriverDashboard();
         },
         (error) => {
             alert('❌ Unable to get your location: ' + error.message);
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
         }
     );
 }
+
+// Auto-update driver location every 30 seconds when online
+function startDriverLocationTracking() {
+    const driverId = sessionStorage.getItem('loggedInDriver');
+    if (!driverId) return;
+    
+    const driver = window.driverSystem.get(driverId);
+    if (!driver || !driver.available) return;
+    
+    // Check if there are assigned orders
+    const hasOrders = pendingOrders.some(o => o.driverId === driverId);
+    if (!hasOrders) return;
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const locationData = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                window.driverSystem.update(driverId, { currentLocation: locationData });
+                
+                const liveLocations = JSON.parse(localStorage.getItem('driverLiveLocations') || '{}');
+                liveLocations[driverId] = locationData;
+                localStorage.setItem('driverLiveLocations', JSON.stringify(liveLocations));
+            },
+            () => {}, // Silently fail
+            { enableHighAccuracy: true, timeout: 5000 }
+        );
+    }
+}
+
+// Start tracking when driver goes online or accepts order
+setInterval(() => {
+    const driverId = sessionStorage.getItem('loggedInDriver');
+    if (driverId) {
+        startDriverLocationTracking();
+    }
+}, 30000); // Update every 30 seconds
 
 function openDirections(address) {
     // Open Google Maps with directions
@@ -3308,6 +4378,8 @@ function markOrderDelivered(orderId) {
     
     // Update order status
     order.status = 'completed';
+    order.completedAt = new Date().toISOString();
+    order.driverRated = false; // Flag for rating
     
     // Move to order history
     orderHistory.push(order);
@@ -3324,7 +4396,7 @@ function markOrderDelivered(orderId) {
         }
     }
     
-    // Notify customer
+    // Notify customer (without driver details for completed orders)
     addNotification(order.userId, {
         type: 'order_completed',
         title: '🎉 Order Delivered!',
@@ -3337,6 +4409,11 @@ function markOrderDelivered(orderId) {
     showDriverDashboard();
     
     alert('✅ Order marked as delivered!');
+    
+    // Trigger rating popup for customer if they're logged in
+    if (currentUser && currentUser.email === order.userId) {
+        showDeliveryRatingPopup(orderId, order.driverId, order.driverName || 'Driver');
+    }
 }
 
 function logoutDriver() {
@@ -3350,9 +4427,407 @@ function logoutDriver() {
         loginBtn.onclick = showLogin;
     }
     
-    closeModal('driverDashboardModal');
+    // Close modal if open
+    const modal = document.getElementById('driverDashboardModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+// ========================================
+// DRIVER LIVE TRACKING
+// ========================================
+let trackingMap = null;
+let driverMarker = null;
+let customerMarker = null;
+let trackingInterval = null;
+let trackingOrderId = null;
+
+function trackDriver(orderId) {
+    const order = pendingOrders.find(o => o.id === orderId) || orderHistory.find(o => o.id === orderId);
+    if (!order) {
+        alert('❌ Order not found');
+        return;
+    }
     
-    alert('✅ Logged out successfully');
+    if (!order.driverId) {
+        alert('❌ No driver assigned to this order yet');
+        return;
+    }
+    
+    // Check if order is still out for delivery
+    if (order.status === 'completed') {
+        alert('✅ This order has been delivered!');
+        return;
+    }
+    
+    trackingOrderId = orderId;
+    
+    // Get driver info
+    const driver = window.driverSystem.get(order.driverId);
+    
+    // Show tracking modal
+    const modal = document.getElementById('driverTrackingModal');
+    const orderIdDisplay = document.getElementById('trackingOrderId');
+    const infoPanel = document.getElementById('driverInfoPanel');
+    
+    if (orderIdDisplay) {
+        orderIdDisplay.textContent = `Order #${orderId}`;
+    }
+    
+    // Get driver image
+    const driverImage = driver?.profilePic || driver?.profilePicture || null;
+    
+    // Render driver info panel with image
+    if (infoPanel) {
+        infoPanel.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; overflow: hidden; border: 3px solid #10b981;">
+                    ${driverImage ? `<img src="${driverImage}" style="width: 100%; height: 100%; object-fit: cover;">` : '🚗'}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 700; color: white; font-size: 1.1rem;">${order.driverName || 'Driver'}</div>
+                    <div style="color: rgba(255,255,255,0.7); font-size: 0.9rem;">📞 ${order.driverPhone || 'N/A'}</div>
+                    ${driver?.rating ? `<div style="color: #f59e0b; font-size: 0.85rem;">⭐ ${driver.rating.toFixed(1)} rating</div>` : ''}
+                </div>
+                <div style="text-align: right;">
+                    ${order.estimatedTime ? `<div style="color: #f59e0b; font-weight: 700; font-size: 1.2rem;">~${order.estimatedTime} min</div>` : ''}
+                    ${order.distanceMiles ? `<div style="color: rgba(255,255,255,0.6); font-size: 0.85rem;">${order.distanceMiles} miles</div>` : ''}
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                <a href="tel:${order.driverPhone}" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 0.8rem; border-radius: 10px; cursor: pointer; font-weight: 600; text-align: center; text-decoration: none;">
+                    📞 Call Driver
+                </a>
+                <button onclick="refreshDriverLocation()" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.8rem; border-radius: 10px; cursor: pointer; font-weight: 600;">
+                    🔄 Refresh
+                </button>
+            </div>
+        `;
+    }
+    
+    modal.style.display = 'block';
+    
+    // Initialize tracking map
+    setTimeout(() => {
+        initTrackingMap(order, driver);
+    }, 100);
+    
+    // Start location updates
+    startLocationUpdates(order, driver);
+}
+
+function initTrackingMap(order, driver) {
+    const mapContainer = document.getElementById('trackingMap');
+    if (!mapContainer || !window.google) {
+        mapContainer.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: rgba(255,255,255,0.5);">Map requires Google Maps API</div>';
+        return;
+    }
+    
+    // Default to restaurant location if no delivery location
+    const customerLat = order.deliveryLocation?.lat || UK_CONFIG.restaurant.lat + 0.01;
+    const customerLng = order.deliveryLocation?.lng || UK_CONFIG.restaurant.lng + 0.01;
+    
+    // Driver location - check if driver has real location, otherwise simulate
+    let driverLat, driverLng;
+    
+    // Check for real-time driver location from localStorage
+    const liveDriverLocations = JSON.parse(localStorage.getItem('driverLiveLocations') || '{}');
+    if (liveDriverLocations[order.driverId]) {
+        driverLat = liveDriverLocations[order.driverId].lat;
+        driverLng = liveDriverLocations[order.driverId].lng;
+    } else if (driver?.currentLocation?.lat) {
+        driverLat = driver.currentLocation.lat;
+        driverLng = driver.currentLocation.lng;
+    } else {
+        // Simulate starting from restaurant
+        driverLat = UK_CONFIG.restaurant.lat;
+        driverLng = UK_CONFIG.restaurant.lng;
+    }
+    
+    const center = {
+        lat: (customerLat + driverLat) / 2,
+        lng: (customerLng + driverLng) / 2
+    };
+    
+    trackingMap = new google.maps.Map(mapContainer, {
+        center: center,
+        zoom: 15,
+        mapTypeId: 'hybrid', // Satellite with labels
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: google.maps.ControlPosition.TOP_RIGHT
+        },
+        gestureHandling: 'greedy', // Single finger drag on mobile
+        zoomControl: true,
+        fullscreenControl: false,
+        streetViewControl: false
+    });
+    
+    // Customer marker (destination) - House icon
+    customerMarker = new google.maps.Marker({
+        position: { lat: customerLat, lng: customerLng },
+        map: trackingMap,
+        title: 'Delivery Location',
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 14,
+            fillColor: '#10b981',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 3
+        },
+        label: {
+            text: '🏠',
+            fontSize: '16px'
+        }
+    });
+    
+    // Driver marker - Car icon
+    driverMarker = new google.maps.Marker({
+        position: { lat: driverLat, lng: driverLng },
+        map: trackingMap,
+        title: order.driverName || 'Driver',
+        icon: {
+            path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+            scale: 7,
+            fillColor: '#3b82f6',
+            fillOpacity: 1,
+            strokeColor: '#ffffff',
+            strokeWeight: 2,
+            rotation: 0
+        }
+    });
+    
+    // Draw route line
+    const routePath = new google.maps.Polyline({
+        path: [
+            { lat: driverLat, lng: driverLng },
+            { lat: customerLat, lng: customerLng }
+        ],
+        geodesic: true,
+        strokeColor: '#3b82f6',
+        strokeOpacity: 0.8,
+        strokeWeight: 4
+    });
+    routePath.setMap(trackingMap);
+    
+    // Fit bounds to show both markers
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend({ lat: customerLat, lng: customerLng });
+    bounds.extend({ lat: driverLat, lng: driverLng });
+    trackingMap.fitBounds(bounds, 50);
+}
+
+function startLocationUpdates(order, driver) {
+    // Clear any existing interval
+    if (trackingInterval) {
+        clearInterval(trackingInterval);
+    }
+    
+    // Simulate driver movement towards customer
+    let progress = 0;
+    const startLat = driver?.currentLocation?.lat || UK_CONFIG.restaurant.lat;
+    const startLng = driver?.currentLocation?.lng || UK_CONFIG.restaurant.lng;
+    const endLat = order.deliveryLocation?.lat || UK_CONFIG.restaurant.lat + 0.01;
+    const endLng = order.deliveryLocation?.lng || UK_CONFIG.restaurant.lng + 0.01;
+    
+    trackingInterval = setInterval(() => {
+        if (!driverMarker || !trackingMap) {
+            clearInterval(trackingInterval);
+            return;
+        }
+        
+        // Move driver closer to destination (simulation)
+        progress += 0.05;
+        if (progress >= 1) {
+            progress = 1;
+            clearInterval(trackingInterval);
+        }
+        
+        const newLat = startLat + (endLat - startLat) * progress;
+        const newLng = startLng + (endLng - startLng) * progress;
+        
+        driverMarker.setPosition({ lat: newLat, lng: newLng });
+        
+        // Calculate heading for arrow rotation
+        const heading = google.maps.geometry?.spherical?.computeHeading(
+            new google.maps.LatLng(newLat, newLng),
+            new google.maps.LatLng(endLat, endLng)
+        ) || 0;
+        
+        const icon = driverMarker.getIcon();
+        icon.rotation = heading;
+        driverMarker.setIcon(icon);
+        
+    }, 3000); // Update every 3 seconds
+}
+
+function refreshDriverLocation() {
+    if (trackingOrderId) {
+        const order = pendingOrders.find(o => o.id === trackingOrderId) || orderHistory.find(o => o.id === trackingOrderId);
+        if (order) {
+            const driver = window.driverSystem.get(order.driverId);
+            initTrackingMap(order, driver);
+        }
+    }
+    alert('📍 Location refreshed!');
+}
+
+function closeTrackingModal() {
+    if (trackingInterval) {
+        clearInterval(trackingInterval);
+        trackingInterval = null;
+    }
+    trackingOrderId = null;
+    const modal = document.getElementById('driverTrackingModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// ========================================
+// DRIVER RATING SYSTEM
+// ========================================
+let currentRating = 0;
+
+function openDriverRating(orderId, driverId, driverName, autoPopup = false) {
+    // Check if order was already rated
+    const order = orderHistory.find(o => o.id === orderId);
+    if (order && order.driverRated) {
+        if (!autoPopup) {
+            alert(`⚠️ You have already rated this driver!\n\nRating: ${order.driverRating}/5 stars`);
+        }
+        return;
+    }
+    
+    // Get driver info for image
+    const driver = window.driverSystem.get(driverId);
+    
+    document.getElementById('ratingOrderId').value = orderId;
+    document.getElementById('ratingDriverId').value = driverId;
+    document.getElementById('ratingDriverName').textContent = driverName;
+    
+    // Show driver image if available
+    const driverImageContainer = document.getElementById('ratingDriverImage');
+    if (driverImageContainer) {
+        if (driver && driver.profilePic) {
+            driverImageContainer.innerHTML = `<img src="${driver.profilePic}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f59e0b;">`;
+        } else {
+            driverImageContainer.innerHTML = `<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; font-size: 2.5rem;">🚗</div>`;
+        }
+    }
+    
+    // Clear comment field
+    const commentField = document.getElementById('ratingComment');
+    if (commentField) commentField.value = '';
+    
+    currentRating = 0;
+    renderStarRating();
+    document.getElementById('ratingValue').textContent = '0';
+    
+    openModal('driverRatingModal');
+}
+
+function renderStarRating() {
+    const container = document.getElementById('starRatingContainer');
+    if (!container) return;
+    
+    // Simple 5-star rating (whole numbers only)
+    container.innerHTML = `
+        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+            ${[1, 2, 3, 4, 5].map(i => `
+                <div onclick="setRating(${i})" 
+                     style="font-size: 2.8rem; cursor: pointer; opacity: ${i <= currentRating ? 1 : 0.3}; transition: all 0.2s; transform: ${i <= currentRating ? 'scale(1.1)' : 'scale(1)'};" 
+                     onmouseover="previewRating(${i})" 
+                     onmouseout="resetPreview()">⭐</div>
+            `).join('')}
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 0.5rem; padding: 0 0.5rem;">
+            ${['Poor', 'Fair', 'Good', 'Great', 'Excellent'].map((label, i) => `
+                <span style="font-size: 0.7rem; color: rgba(255,255,255,0.4); text-align: center; width: 50px;">${label}</span>
+            `).join('')}
+        </div>
+    `;
+}
+
+function setRating(value) {
+    currentRating = value;
+    document.getElementById('ratingValue').textContent = value;
+    renderStarRating();
+}
+
+function previewRating(value) {
+    // Visual preview on hover
+    const stars = document.querySelectorAll('#starRatingContainer > div > div');
+    stars.forEach((star, index) => {
+        star.style.opacity = index + 1 <= value ? 1 : 0.3;
+        star.style.transform = index + 1 <= value ? 'scale(1.1)' : 'scale(1)';
+    });
+}
+
+function resetPreview() {
+    renderStarRating();
+}
+
+function submitDriverRating() {
+    if (currentRating < 1) {
+        alert('⚠️ Please select a rating (1-5 stars)');
+        return;
+    }
+    
+    const orderId = document.getElementById('ratingOrderId').value;
+    const driverId = document.getElementById('ratingDriverId').value;
+    const comment = document.getElementById('ratingComment')?.value.trim() || '';
+    
+    // Find order and update
+    const order = orderHistory.find(o => o.id === orderId);
+    if (order) {
+        order.driverRated = true;
+        order.driverRating = currentRating;
+        order.driverRatingComment = comment;
+        saveData();
+    }
+    
+    // Also update in pendingOrders if exists there
+    const pendingOrder = pendingOrders.find(o => o.id === orderId);
+    if (pendingOrder) {
+        pendingOrder.driverRated = true;
+        pendingOrder.driverRating = currentRating;
+        pendingOrder.driverRatingComment = comment;
+        saveData();
+    }
+    
+    // Update driver's average rating (keeps decimal precision internally)
+    const driver = window.driverSystem.get(driverId);
+    if (driver) {
+        const totalRatings = (driver.totalRatings || 0) + 1;
+        const ratingSum = ((driver.rating || 5) * (driver.totalRatings || 0)) + currentRating;
+        const newAverage = ratingSum / totalRatings;
+        
+        window.driverSystem.update(driverId, {
+            rating: Math.round(newAverage * 100) / 100, // Keep 2 decimal places internally
+            totalRatings: totalRatings
+        });
+    }
+    
+    closeModal('driverRatingModal');
+    
+    alert(`⭐ Thank you for your ${currentRating}-star rating!${comment ? '\n\nYour feedback has been saved.' : ''}`);
+    
+    // Refresh account page if open
+    if (document.getElementById('accountModal')?.style.display === 'flex') {
+        showAccount();
+    }
+}
+
+// Auto-popup rating after delivery
+function showDeliveryRatingPopup(orderId, driverId, driverName) {
+    setTimeout(() => {
+        openDriverRating(orderId, driverId, driverName, true);
+    }, 1500);
 }
 
 function generateDriverSecretCode() {
@@ -3369,8 +4844,10 @@ function generateDriverSecretCode() {
 // ========================================
 function pickLocation() {
     const modal = document.getElementById('mapModal');
-    if (modal) modal.classList.add('active');
-    initMap();
+    if (modal) {
+        modal.style.display = 'block';
+    }
+    setTimeout(() => initMap(), 100);
 }
 
 function initMap() {
@@ -3382,11 +4859,16 @@ function initMap() {
     googleMap = new google.maps.Map(mapContainer, {
         center: center,
         zoom: 14,
-        styles: [
-            { elementType: 'geometry', stylers: [{ color: '#242f3e' }] },
-            { elementType: 'labels.text.stroke', stylers: [{ color: '#242f3e' }] },
-            { elementType: 'labels.text.fill', stylers: [{ color: '#746855' }] }
-        ]
+        mapTypeId: 'hybrid', // Satellite with labels
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: google.maps.ControlPosition.TOP_RIGHT
+        },
+        gestureHandling: 'greedy', // Single finger drag on mobile
+        zoomControl: true,
+        fullscreenControl: false,
+        streetViewControl: false
     });
     
     // Restaurant marker
@@ -3397,7 +4879,7 @@ function initMap() {
         icon: {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-                    <circle cx="20" cy="20" r="18" fill="#ff6b6b" stroke="#fff" stroke-width="3"/>
+                    <circle cx="20" cy="20" r="18" fill="#e63946" stroke="#fff" stroke-width="3"/>
                     <text x="20" y="26" font-size="18" text-anchor="middle" fill="#fff">🌯</text>
                 </svg>
             `),
@@ -3411,6 +4893,20 @@ function initMap() {
     });
 }
 
+// Variable to track if picking for profile
+let pickingForProfile = false;
+
+function pickLocationForProfile() {
+    pickingForProfile = true;
+    closeModal('editProfileModal');
+    
+    const modal = document.getElementById('mapModal');
+    if (modal) {
+        modal.style.display = 'block';
+    }
+    setTimeout(() => initMap(), 100);
+}
+
 function addMarker(location) {
     if (mapMarker) mapMarker.setMap(null);
     
@@ -3420,7 +4916,7 @@ function addMarker(location) {
         icon: {
             url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">
-                    <circle cx="20" cy="20" r="18" fill="#10b981" stroke="#fff" stroke-width="3"/>
+                    <circle cx="20" cy="20" r="18" fill="#2a9d8f" stroke="#fff" stroke-width="3"/>
                     <text x="20" y="26" font-size="18" text-anchor="middle" fill="#fff">📍</text>
                 </svg>
             `),
@@ -3444,19 +4940,33 @@ function addMarker(location) {
     const deliveryInfo = getDeliveryCost(distance);
     document.getElementById('selectedLocationText').innerHTML = `
         📍 ${distance.toFixed(1)} miles from restaurant<br>
-        <span style="color: ${deliveryInfo.available ? '#10b981' : '#ef4444'};">${deliveryInfo.message}</span>
+        <span style="color: ${deliveryInfo.available ? '#2a9d8f' : '#ef4444'};">${deliveryInfo.message}</span>
     `;
     
-    // Try to get address
+    // Try to get address via geocoding
     if (window.google && google.maps.Geocoder) {
         const geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: location }, (results, status) => {
             if (status === 'OK' && results[0]) {
                 selectedLocation.address = results[0].formatted_address;
+                
+                // Update location display
                 document.getElementById('selectedLocationText').innerHTML = `
                     📍 ${selectedLocation.address}<br>
-                    <span style="color: ${deliveryInfo.available ? '#10b981' : '#ef4444'};">${deliveryInfo.message}</span>
+                    <span style="color: ${deliveryInfo.available ? '#2a9d8f' : '#ef4444'};">${deliveryInfo.message}</span>
                 `;
+                
+                // Also update edit profile address field if it exists
+                const editAddressField = document.getElementById('editAddress');
+                if (editAddressField) {
+                    editAddressField.value = selectedLocation.address;
+                }
+                
+                // Update auth address field if it exists
+                const authAddressField = document.getElementById('authAddress');
+                if (authAddressField) {
+                    authAddressField.value = selectedLocation.address;
+                }
             }
         });
     }
@@ -3525,80 +5035,85 @@ function confirmLocation() {
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
     }
     
-    closeModal('mapModal');
-    alert(`✅ Location confirmed!\n\n${selectedLocation.address || 'Location set'}\n${deliveryInfo.message}`);
+    // Close map modal
+    const mapModal = document.getElementById('mapModal');
+    if (mapModal) {
+        mapModal.style.display = 'none';
+    }
+    
+    // If we were picking for profile, reopen edit profile modal
+    if (pickingForProfile) {
+        pickingForProfile = false;
+        
+        // Update the edit address field
+        const editAddressField = document.getElementById('editAddress');
+        if (editAddressField && selectedLocation.address) {
+            editAddressField.value = selectedLocation.address;
+        }
+        
+        openEditProfile();
+        alert(`✅ Location set!\n\n${selectedLocation.address || 'Location confirmed'}`);
+    } else {
+        alert(`✅ Location confirmed!\n\n${selectedLocation.address || 'Location set'}\n${deliveryInfo.message}`);
+    }
 }
 
 // ========================================
 // MODAL & UTILITY FUNCTIONS
 // ========================================
 
-// Track which modals are open
-let openModals = [];
-
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-    
-    // Remove from open modals list
-    openModals = openModals.filter(id => id !== modalId);
-    
-    // Hide modal
-    modal.classList.remove('active');
-    modal.style.display = 'none';
-    
-    // Reset specific modal states
-    if (modalId === 'loginModal') {
-        const authForm = document.getElementById('authFormSection');
-        const verifySection = document.getElementById('emailVerificationSection');
-        if (authForm) authForm.style.display = 'block';
-        if (verifySection) verifySection.style.display = 'none';
-    }
-    
-    if (modalId === 'driverLoginModal') {
-        showDriverCodeLogin();
-    }
-    
-    // Re-enable body scrolling if no modals open
-    if (openModals.length === 0) {
+    try {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        // Hide modal - both class and inline style for consistency
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+        
+        // Reset specific modal states
+        if (modalId === 'loginModal') {
+            const authForm = document.getElementById('authFormSection');
+            const verifySection = document.getElementById('emailVerificationSection');
+            if (authForm) authForm.style.display = 'block';
+            if (verifySection) verifySection.style.display = 'none';
+        }
+        
+        if (modalId === 'driverLoginModal') {
+            const codeLogin = document.getElementById('driverCodeLogin');
+            const emailLogin = document.getElementById('driverEmailLogin');
+            if (codeLogin) codeLogin.style.display = 'block';
+            if (emailLogin) emailLogin.style.display = 'none';
+        }
+        
+        // Stop tracking updates when closing tracking modal
+        if (modalId === 'driverTrackingModal') {
+            if (trackingInterval) {
+                clearInterval(trackingInterval);
+                trackingInterval = null;
+            }
+            trackingOrderId = null;
+        }
+        
+        // Re-enable body scrolling
         document.body.style.overflow = '';
+    } catch (e) {
+        console.error('Error closing modal:', e);
     }
 }
 
 function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (!modal) return;
-    
-    // Add to open modals list if not already there
-    if (!openModals.includes(modalId)) {
-        openModals.push(modalId);
+    try {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        
+        // Show modal - both class and inline style for consistency  
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    } catch (e) {
+        console.error('Error opening modal:', e);
     }
-    
-    // Show modal
-    modal.style.display = 'flex';
-    modal.classList.add('active');
-    
-    // Disable body scrolling
-    document.body.style.overflow = 'hidden';
 }
-
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-    if (e.target.classList.contains('modal') && e.target.classList.contains('active')) {
-        const modalId = e.target.id;
-        if (modalId) {
-            closeModal(modalId);
-        }
-    }
-});
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && openModals.length > 0) {
-        const lastModal = openModals[openModals.length - 1];
-        closeModal(lastModal);
-    }
-});
 
 function scrollToMenu() {
     document.querySelector('.main-content')?.scrollIntoView({ behavior: 'smooth' });
@@ -3622,6 +5137,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load data
     loadData();
     loadBankDetails();
+    loadMenuData(); // Load custom menu data from owner
     
     // Render categories
     renderCategories();
@@ -3739,6 +5255,42 @@ window.saveDriverChanges = saveDriverChanges;
 window.toggleDriverStatus = toggleDriverStatus;
 window.notifyAllAvailableDrivers = notifyAllAvailableDrivers;
 
+// Driver order functions
+window.driverAcceptOrder = driverAcceptOrder;
+window.callCustomer = callCustomer;
+window.confirmLogoutDriver = confirmLogoutDriver;
+window.calculateDeliveryTime = calculateDeliveryTime;
+window.getDistanceFromLatLng = getDistanceFromLatLng;
+
+// Driver tracking functions
+window.trackDriver = trackDriver;
+window.refreshDriverLocation = refreshDriverLocation;
+window.closeTrackingModal = closeTrackingModal;
+window.startDriverLocationTracking = startDriverLocationTracking;
+
+// Driver rating functions
+window.openDriverRating = openDriverRating;
+window.setRating = setRating;
+window.previewRating = previewRating;
+window.resetPreview = resetPreview;
+window.submitDriverRating = submitDriverRating;
+window.showDeliveryRatingPopup = showDeliveryRatingPopup;
+
+// Order functions
+window.userCanOrder = userCanOrder;
+window.showOrderHistory = showOrderHistory;
+window.updateOrdersBadge = updateOrdersBadge;
+
+// Restaurant status functions
+window.isRestaurantOpen = isRestaurantOpen;
+window.getRestaurantStatus = getRestaurantStatus;
+window.getUKTime = getUKTime;
+window.getUKHour = getUKHour;
+window.resetAllData = resetAllData;
+
+// Location functions
+window.pickLocationForProfile = pickLocationForProfile;
+
 // Reorder functions
 window.reorderFromHistory = reorderFromHistory;
 window.confirmReorder = confirmReorder;
@@ -3748,6 +5300,27 @@ window.showLocationConfirmation = showLocationConfirmation;
 window.confirmCurrentLocation = confirmCurrentLocation;
 window.changeDeliveryLocation = changeDeliveryLocation;
 window.openCheckoutModal = openCheckoutModal;
+
+// Menu management functions (Owner)
+window.openMenuManager = openMenuManager;
+window.renderMenuManagerList = renderMenuManagerList;
+window.toggleFoodAvailability = toggleFoodAvailability;
+window.openAddFood = openAddFood;
+window.openEditFood = openEditFood;
+window.saveFoodItem = saveFoodItem;
+window.deleteFood = deleteFood;
+window.closeFoodEditor = closeFoodEditor;
+window.openAddCategory = openAddCategory;
+window.openEditCategory = openEditCategory;
+window.saveCategory = saveCategory;
+window.closeCategoryEditor = closeCategoryEditor;
+window.deleteCategory = deleteCategory;
+window.previewFoodImage = previewFoodImage;
+window.previewCategoryImage = previewCategoryImage;
+window.handleFoodImageUpload = handleFoodImageUpload;
+window.handleCategoryImageUpload = handleCategoryImageUpload;
+window.saveMenuData = saveMenuData;
+window.loadMenuData = loadMenuData;
 
 // Modal functions
 window.openModal = openModal;

@@ -21,6 +21,7 @@
                 <button class="icon-btn" onclick="document.getElementById('ownerModal').style.display='flex';" title="Owner Access" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); border: 3px solid #8b5cf6; font-size: 1.5rem; animation: pulse 2s infinite;">🔧</button>
                 <button class="icon-btn" onclick="showNotifications()">🔔<span class="badge" id="notificationBadge">0</span></button>
                 <button class="icon-btn" onclick="showFavorites()">❤️<span class="badge" id="favoritesBadge">0</span></button>
+                <button class="icon-btn" onclick="showOrderHistory()">📋<span class="badge" id="ordersBadge">0</span></button>
                 <button class="icon-btn" onclick="showCart()">🛒<span class="badge" id="cartBadge">0</span></button>
                 <button class="icon-btn" onclick="showAccount()">👤</button>
                 <button class="login-btn" onclick="showLogin()">Login</button>
@@ -60,20 +61,35 @@
         <div class="social-content">
             <div class="footer-section">
                 <h3>🌯 Antalya Shawarma</h3>
-                <p style="color: rgba(255,255,255,0.6);">Birmingham's Best Shawarma Restaurant</p>
+                <p style="color: rgba(255,255,255,0.6);">Hyde's Best Shawarma Restaurant</p>
                 <p style="color: rgba(255,255,255,0.5); margin-top: 0.5rem; font-size: 0.9rem;">Traditional Kurdish, Turkish & Arabic Cuisine</p>
+                <div style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(34,197,94,0.2); padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid rgba(34,197,94,0.4);">
+                    <span style="font-size: 1.2rem;">☪️</span>
+                    <span style="color: #22c55e; font-weight: 600;">100% HALAL</span>
+                </div>
+            </div>
+            <div class="footer-section">
+                <h3>📍 Location</h3>
+                <div style="color: rgba(255,255,255,0.7);">181 Market Street</div>
+                <div style="color: rgba(255,255,255,0.7);">Hyde, Tameside</div>
+                <div style="color: rgba(255,255,255,0.7);">SK14 1HF</div>
+                <a href="https://maps.google.com/?q=181+Market+St,+Hyde+SK14+1HF" target="_blank" style="color: #3b82f6; font-size: 0.9rem; margin-top: 0.5rem; display: inline-block;">📍 View on Map</a>
             </div>
             <div class="footer-section">
                 <h3>📞 Contact</h3>
-                <div style="color: rgba(255,255,255,0.7);">📍 181 Market St, Hyde SK14 1HF</div>
-                <div style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">📞 +44 121 293 0395</div>
+                <div style="color: rgba(255,255,255,0.7);">📞 +44 161 536 1862</div>
                 <div style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">📧 info@antalyashawarma.com</div>
+                <a href="https://instagram.com/antalyashawarma_" target="_blank" style="color: #e1306c; font-size: 0.9rem; margin-top: 0.5rem; display: inline-block;">📸 @antalyashawarma_</a>
             </div>
             <div class="footer-section">
                 <h3>🕐 Hours</h3>
                 <div style="color: rgba(255,255,255,0.7);">Mon-Sun: 11:00 - 23:00</div>
-                <div style="color: rgba(255,255,255,0.5); margin-top: 0.5rem; font-size: 0.9rem;">Delivery until 22:30</div>
+                <div style="color: #f4a261; margin-top: 0.5rem; font-size: 0.9rem; font-weight: 600;">Last orders: 22:30</div>
+                <div style="color: rgba(255,255,255,0.5); margin-top: 0.5rem; font-size: 0.85rem;">Delivery • Takeaway • Dine-in</div>
             </div>
+        </div>
+        <div style="text-align: center; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 1.5rem;">
+            <p style="color: rgba(255,255,255,0.4); font-size: 0.85rem;">All food is 100% Halal • Fresh ingredients made to order</p>
         </div>
     </div>
 
@@ -236,17 +252,17 @@
                 <p style="margin: 1rem 0 0; font-size: 1.1rem; opacity: 0.95;">Order Management System</p>
             </div>
             
-            <!-- Stats - Monthly Data Only (No Total Revenue for Staff) -->
+            <!-- Stats - Daily Data Only (No Total Revenue for Staff) -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                 <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💰</div>
                     <div id="monthlyRevenueStat" style="font-size: 1.8rem; font-weight: 700;">£0.00</div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">Monthly Revenue</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Daily Revenue</div>
                 </div>
                 <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦</div>
                     <div id="monthlyOrdersStat" style="font-size: 1.8rem; font-weight: 700;">0</div>
-                    <div style="font-size: 0.9rem; opacity: 0.9;">Monthly Orders</div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Daily Orders</div>
                 </div>
                 <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
                     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏳</div>
@@ -357,6 +373,12 @@
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <button onclick="openMenuManager()" style="padding: 2.5rem; background: linear-gradient(135deg, #e63946, #c1121f); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+                    <span style="font-size: 3rem;">🍽️</span>
+                    <span>Menu Management</span>
+                    <span style="font-size: 0.85rem; opacity: 0.9; font-weight: 400;">Add/edit food & categories</span>
+                </button>
+                
                 <button onclick="showDriverManagementModal()" style="padding: 2.5rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
                     <span style="font-size: 3rem;">🚗</span>
                     <span>Driver Management</span>
@@ -380,6 +402,15 @@
                 <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
                 <h2 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.8rem;">Owner Access Active</h2>
                 <p style="color: rgba(255,255,255,0.8); margin: 0; font-size: 1.05rem;">All system features and controls are now available</p>
+            </div>
+            
+            <!-- Danger Zone -->
+            <div style="margin-top: 2rem; background: rgba(239,68,68,0.1); border: 2px solid rgba(239,68,68,0.3); padding: 2rem; border-radius: 15px;">
+                <h3 style="color: #ef4444; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">⚠️ Danger Zone</h3>
+                <p style="color: rgba(255,255,255,0.7); margin-bottom: 1rem; font-size: 0.9rem;">These actions cannot be undone. Please proceed with caution.</p>
+                <button onclick="resetAllData()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🗑️ Reset All Data
+                </button>
             </div>
         </div>
     </div>
@@ -578,6 +609,15 @@
         </div>
     </div>
 
+    <!-- ORDER HISTORY MODAL -->
+    <div class="modal" id="orderHistoryModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <button class="close-btn" onclick="closeModal('orderHistoryModal')">×</button>
+            <h2>📋 Order History</h2>
+            <div id="orderHistoryContent"></div>
+        </div>
+    </div>
+
     <!-- ACCOUNT MODAL - FULL PROFILE EDITING -->
     <div class="modal" id="accountModal">
         <div class="modal-content" style="max-width: 600px;">
@@ -620,8 +660,11 @@
                     <input type="tel" id="editPhone" placeholder="+44 7XXX XXX XXX" required>
                 </div>
                 <div class="form-group">
-                    <label>Address</label>
-                    <input type="text" id="editAddress" placeholder="Your delivery address">
+                    <label>Delivery Address</label>
+                    <input type="text" id="editAddress" placeholder="Click button below to set location" readonly style="background: rgba(255,255,255,0.05);">
+                    <button type="button" onclick="pickLocationForProfile()" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; margin-top: 0.5rem;">
+                        📍 Pick Location on Map
+                    </button>
                 </div>
                 <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #3b82f6, #2563eb);">💾 Save Changes</button>
             </form>
@@ -685,19 +728,73 @@
         </div>
     </div>
 
-    <!-- MAP MODAL -->
-    <div class="modal" id="mapModal">
-        <div class="modal-content" style="max-width: 800px;">
-            <button class="close-btn" onclick="closeModal('mapModal')">×</button>
-            <h2>📍 Select Delivery Location</h2>
-            <div id="map" style="width: 100%; height: 400px; border-radius: 10px; margin: 1rem 0;"></div>
-            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                <button onclick="getCurrentLocation()" class="map-btn" style="flex: 1;">📍 Use My Location</button>
+    <!-- MAP MODAL - FULLSCREEN -->
+    <div id="mapModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a2e; z-index: 10002;">
+        <div style="height: 100%; display: flex; flex-direction: column;">
+            <div style="padding: 1rem; background: rgba(0,0,0,0.3); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; color: white; font-size: 1.2rem;">📍 Select Delivery Location</h2>
+                <button onclick="closeModal('mapModal')" style="background: #ef4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;">✕</button>
             </div>
-            <div id="selectedLocationText" style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 1rem;">
-                Click on the map to select your delivery location
+            <div id="map" style="flex: 1; width: 100%;"></div>
+            <div style="padding: 1rem; background: rgba(0,0,0,0.5);">
+                <div id="selectedLocationText" style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 1rem; font-size: 0.9rem;">
+                    Click on the map to select your delivery location
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem;">
+                    <button onclick="getCurrentLocation()" style="background: linear-gradient(45deg, #3b82f6, #2563eb); color: white; border: none; padding: 1rem; border-radius: 10px; font-weight: 600; cursor: pointer;">📍 My Location</button>
+                    <button onclick="confirmLocation()" style="background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; padding: 1rem; border-radius: 10px; font-weight: 600; cursor: pointer;">✅ Confirm</button>
+                </div>
             </div>
-            <button class="submit-btn" onclick="confirmLocation()">✅ Confirm Location</button>
+        </div>
+    </div>
+
+    <!-- DRIVER TRACKING MODAL - FULLSCREEN -->
+    <div id="driverTrackingModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a2e; z-index: 10002;">
+        <div style="height: 100%; display: flex; flex-direction: column;">
+            <div style="padding: 1rem; background: linear-gradient(135deg, #10b981, #059669); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 style="margin: 0; color: white; font-size: 1.1rem;">🚗 Driver On The Way</h2>
+                    <p id="trackingOrderId" style="margin: 0.2rem 0 0; color: rgba(255,255,255,0.8); font-size: 0.85rem;"></p>
+                </div>
+                <button onclick="closeModal('driverTrackingModal')" style="background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.2rem; cursor: pointer;">✕</button>
+            </div>
+            <div id="trackingMap" style="flex: 1; width: 100%;"></div>
+            <div id="driverInfoPanel" style="padding: 1rem; background: rgba(0,0,0,0.5);">
+                <!-- Driver info will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- DRIVER RATING MODAL -->
+    <div class="modal" id="driverRatingModal" style="display: none; z-index: 10003;">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="close-btn" onclick="closeModal('driverRatingModal')">×</button>
+            <div style="text-align: center;">
+                <div id="ratingDriverImage" style="margin-bottom: 1rem;">
+                    <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto;">🚗</div>
+                </div>
+                <h2 style="color: white; margin: 0 0 0.3rem;">Rate Your Driver</h2>
+                <p id="ratingDriverName" style="color: rgba(255,255,255,0.7); margin: 0 0 1.5rem; font-size: 1.1rem;"></p>
+                
+                <div id="starRatingContainer" style="margin-bottom: 1rem;">
+                    <!-- Stars will be rendered here -->
+                </div>
+                
+                <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b; margin-bottom: 1rem;">
+                    <span id="ratingValue">0</span>/5
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <textarea id="ratingComment" placeholder="Add a comment (optional)..." rows="3" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; resize: none; font-family: inherit;"></textarea>
+                </div>
+                
+                <input type="hidden" id="ratingOrderId">
+                <input type="hidden" id="ratingDriverId">
+                
+                <button onclick="submitDriverRating()" style="background: linear-gradient(45deg, #f59e0b, #d97706); color: white; border: none; padding: 1rem 2rem; border-radius: 10px; font-weight: 600; cursor: pointer; width: 100%; font-size: 1rem;">
+                    ⭐ Submit Rating
+                </button>
+            </div>
         </div>
     </div>
 
@@ -721,6 +818,7 @@
                         <option value="">Choose payment method</option>
                         <option value="cash">💷 Cash on Delivery</option>
                         <option value="card">💳 Card Payment</option>
+                        <option value="applepay">🍎 Apple Pay</option>
                     </select>
                 </div>
                 <div id="cardFieldsSection" style="display: none;">
@@ -854,13 +952,10 @@
         </div>
     </div>
 
-    <!-- DRIVER DASHBOARD MODAL -->
-    <div class="modal" id="driverDashboardModal" style="display: none; z-index: 10002;">
-        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
-            <button class="close-btn" onclick="closeModal('driverDashboardModal'); logoutDriver();">×</button>
-            <div id="driverDashboardContent">
-                <!-- Driver dashboard content will be rendered here -->
-            </div>
+    <!-- DRIVER DASHBOARD - FULLSCREEN FOR MOBILE -->
+    <div id="driverDashboardModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); z-index: 10002; overflow-y: auto;">
+        <div id="driverDashboardContent" style="padding: 1rem; min-height: 100vh;">
+            <!-- Driver dashboard content will be rendered here -->
         </div>
     </div>
 
@@ -882,6 +977,157 @@
                 cardInputs.forEach(input => input.removeAttribute('required'));
             }
         }
+    </script>
+    
+    <!-- MENU MANAGER MODAL -->
+    <div class="modal" id="menuManagerModal" style="display: none; z-index: 10003;">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+            <button class="close-btn" onclick="document.getElementById('menuManagerModal').style.display='none'">×</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🍽️</div>
+                <h2 style="color: #e63946; margin: 0;">Menu Management</h2>
+                <p style="color: rgba(255,255,255,0.6);">Add, edit, and manage food items & categories</p>
+            </div>
+            <div id="menuManagerContent"></div>
+        </div>
+    </div>
+    
+    <!-- FOOD EDITOR MODAL -->
+    <div class="modal" id="foodEditorModal" style="display: none; z-index: 10004;">
+        <div class="modal-content" style="max-width: 500px; max-height: 90vh; overflow-y: auto;">
+            <button class="close-btn" onclick="closeFoodEditor()">×</button>
+            <h2 id="foodEditorTitle" style="color: #10b981; text-align: center; margin-bottom: 1.5rem;">Add Food Item</h2>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Category *</label>
+                <select id="foodEditCategory" style="width: 100%; padding: 0.8rem; background: #2a2a2a; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+                    <option value="" style="background: #2a2a2a; color: white;">Select category</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Food Name *</label>
+                <input type="text" id="foodEditName" placeholder="e.g. Chicken Shawarma Wrap" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Price (£) *</label>
+                    <input type="number" id="foodEditPrice" step="0.01" placeholder="6.99" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Icon (emoji)</label>
+                    <input type="text" id="foodEditIcon" placeholder="🌯" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 1.5rem; text-align: center;">
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Description</label>
+                <textarea id="foodEditDesc" rows="2" placeholder="Describe this food item..." style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; resize: vertical;"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Food Image (optional - leave empty for icon)</label>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <button type="button" onclick="document.getElementById('foodEditImageFile').click()" style="flex: 1; padding: 0.6rem; background: rgba(59,130,246,0.2); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                        📁 Upload File
+                    </button>
+                    <input type="file" id="foodEditImageFile" accept="image/*" onchange="handleFoodImageUpload(event)" style="display: none;">
+                </div>
+                <input type="text" id="foodEditImage" placeholder="Or paste image URL here..." oninput="previewFoodImage()" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+                <div id="foodEditImagePreview" style="margin-top: 0.5rem;"></div>
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Extras/Options (one per line: Name:Price)</label>
+                <textarea id="foodEditOptions" rows="4" placeholder="Extra Meat:2.00&#10;Add Cheese:1.00&#10;Make it Spicy:0" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; resize: vertical; font-family: monospace;"></textarea>
+            </div>
+            
+            <button onclick="saveFoodItem()" style="width: 100%; padding: 1rem; background: linear-gradient(45deg, #10b981, #059669); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer;">
+                💾 Save Food Item
+            </button>
+        </div>
+    </div>
+    
+    <!-- CATEGORY EDITOR MODAL -->
+    <div class="modal" id="categoryEditorModal" style="display: none; z-index: 10004;">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="close-btn" onclick="closeCategoryEditor()">×</button>
+            <h2 id="categoryEditorTitle" style="color: #8b5cf6; text-align: center; margin-bottom: 1.5rem;">Add Category</h2>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Category Key * (no spaces)</label>
+                <input type="text" id="categoryEditKey" placeholder="e.g. shawarma, kebabs, drinks" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Display Name *</label>
+                <input type="text" id="categoryEditName" placeholder="e.g. Shawarma Wraps" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Icon (emoji)</label>
+                <input type="text" id="categoryEditIcon" placeholder="🌯" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white; font-size: 1.5rem; text-align: center;">
+            </div>
+            
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.3rem; color: rgba(255,255,255,0.8);">Category Image (optional)</label>
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <button type="button" onclick="document.getElementById('categoryEditImageFile').click()" style="flex: 1; padding: 0.6rem; background: rgba(59,130,246,0.2); color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                        📁 Upload File
+                    </button>
+                    <input type="file" id="categoryEditImageFile" accept="image/*" onchange="handleCategoryImageUpload(event)" style="display: none;">
+                </div>
+                <input type="text" id="categoryEditImage" placeholder="Or paste image URL here..." oninput="previewCategoryImage()" style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; color: white;">
+                <div id="categoryEditImagePreview" style="margin-top: 0.5rem;"></div>
+            </div>
+            
+            <button onclick="saveCategory()" style="width: 100%; padding: 1rem; background: linear-gradient(45deg, #8b5cf6, #7c3aed); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-bottom: 0.5rem;">
+                💾 Save Category
+            </button>
+            
+            <button id="deleteCategoryBtn" onclick="deleteCategory()" style="width: 100%; padding: 0.8rem; background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; font-size: 0.95rem; cursor: pointer; display: none;">
+                🗑️ Delete Category
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // Populate category dropdown when food editor opens
+        document.getElementById('foodEditorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeFoodEditor();
+        });
+        document.getElementById('categoryEditorModal').addEventListener('click', function(e) {
+            if (e.target === this) closeCategoryEditor();
+        });
+        document.getElementById('menuManagerModal').addEventListener('click', function(e) {
+            if (e.target === this) this.style.display = 'none';
+        });
+        
+        // Populate categories dropdown
+        const originalOpenAddFood = window.openAddFood;
+        window.openAddFood = function() {
+            const select = document.getElementById('foodEditCategory');
+            if (select && typeof categories !== 'undefined') {
+                select.innerHTML = '<option value="">Select category</option>' + 
+                    Object.entries(categories).map(([key, cat]) => 
+                        `<option value="${key}">${cat.name}</option>`
+                    ).join('');
+            }
+            if (originalOpenAddFood) originalOpenAddFood();
+        };
+        
+        const originalOpenEditFood = window.openEditFood;
+        window.openEditFood = function(catKey, foodId) {
+            const select = document.getElementById('foodEditCategory');
+            if (select && typeof categories !== 'undefined') {
+                select.innerHTML = '<option value="">Select category</option>' + 
+                    Object.entries(categories).map(([key, cat]) => 
+                        `<option value="${key}">${cat.name}</option>`
+                    ).join('');
+            }
+            if (originalOpenEditFood) originalOpenEditFood(catKey, foodId);
+        };
     </script>
 </body>
 </html>
