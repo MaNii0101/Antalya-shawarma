@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Antalya Shawarma - Authentic Turkish Shawarma & Kebabs</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="mobile.css">
@@ -13,23 +13,64 @@
     <!-- HEADER -->
     <div class="header">
         <div class="header-content">
-            <div class="logo">🌯 Antalya Shawarma</div>
+            <div class="logo" style="display: flex; align-items: center; gap: 0.5rem;">
+                <img src="logo.png" alt="Antalya Shawarma" style="height: 45px; width: auto;">
+                <span style="font-weight: 700;" class="logo-text">Antalya Shawarma</span>
+            </div>
             
             <button class="mobile-menu-btn" onclick="toggleMobileMenu()" id="mobileMenuBtn">☰</button>
             
             <div class="nav-buttons" id="navButtons">
-                <button class="icon-btn" onclick="document.getElementById('ownerModal').style.display='flex';" title="Owner Access" style="background: linear-gradient(45deg, #8b5cf6, #7c3aed); border: 3px solid #8b5cf6; font-size: 1.5rem; animation: pulse 2s infinite;">🔧</button>
-                <button class="icon-btn" onclick="showNotifications()">🔔<span class="badge" id="notificationBadge">0</span></button>
-                <button class="icon-btn" onclick="showFavorites()">❤️<span class="badge" id="favoritesBadge">0</span></button>
-                <button class="icon-btn" onclick="showOrderHistory()">📋<span class="badge" id="ordersBadge">0</span></button>
-                <button class="icon-btn" onclick="showCart()">🛒<span class="badge" id="cartBadge">0</span></button>
-                <button class="icon-btn" onclick="showAccount()">👤</button>
+                <button class="icon-btn owner-access-btn" id="ownerAccessBtn" onclick="showOwnerDashboardDirect()" title="Owner Dashboard" style="display: none;">
+                    <img src="logo.png" alt="Owner" style="height: 24px; width: auto;"><span class="nav-label">Owner</span>
+                </button>
+                <button class="icon-btn" onclick="showNotifications()" title="Notifications">
+                    🔔<span class="badge" id="notificationBadge">0</span><span class="nav-label">Notify</span>
+                </button>
+                <button class="icon-btn" onclick="showFavorites()" title="Favorites">
+                    ❤️<span class="badge" id="favoritesBadge">0</span><span class="nav-label">Favorites</span>
+                </button>
+                <button class="icon-btn" onclick="showOrderHistory()" title="Orders">
+                    📋<span class="badge" id="ordersBadge">0</span><span class="nav-label">History</span>
+                </button>
+                <button class="icon-btn" onclick="showCart()" title="Cart">
+                    🛒<span class="badge" id="cartBadge">0</span><span class="nav-label">Cart</span>
+                </button>
+                <button class="icon-btn" onclick="showAccount()" title="Account">
+                    👤<span class="nav-label">Profile</span>
+                </button>
                 <button class="login-btn" onclick="showLogin()">Login</button>
             </div>
         </div>
     </div>
-
-    <!-- HERO -->
+    
+    <!-- MOBILE BOTTOM NAVIGATION (separate element for mobile) -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <button type="button" class="mobile-nav-item" onclick="window.showNotifications()">
+            <span class="mobile-nav-icon">🔔</span>
+            <span class="mobile-nav-badge" id="mobileNotifyBadge">0</span>
+            <span class="mobile-nav-label">Notify</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="window.showFavorites()">
+            <span class="mobile-nav-icon">❤️</span>
+            <span class="mobile-nav-badge" id="mobileFavBadge">0</span>
+            <span class="mobile-nav-label">Favorites</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="window.showOrderHistory()">
+            <span class="mobile-nav-icon">📋</span>
+            <span class="mobile-nav-badge" id="mobileHistoryBadge">0</span>
+            <span class="mobile-nav-label">History</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="window.showCart()">
+            <span class="mobile-nav-icon">🛒</span>
+            <span class="mobile-nav-badge" id="mobileCartBadge">0</span>
+            <span class="mobile-nav-label">Cart</span>
+        </button>
+        <button type="button" class="mobile-nav-item" onclick="window.showAccount()">
+            <span class="mobile-nav-icon">👤</span>
+            <span class="mobile-nav-label">Profile</span>
+        </button>
+    </nav>
     <div class="hero">
         <video autoplay muted loop playsinline class="hero-video">
             <source src="shawarma.mp4" type="video/mp4">
@@ -38,7 +79,9 @@
             <div class="hero-text">
                 <h1>Antalya Shawarma</h1>
                 <p>Authentic Turkish Shawarma, Kebabs & Grill - Delivered Fresh to Your Door</p>
-                <button class="cta-btn" onclick="scrollToMenu()">🌯 Order Now</button>
+                <button class="cta-btn" onclick="scrollToMenu()" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+                    <img src="logo.png" alt="" style="height: 24px; width: auto;"> Order Now
+                </button>
             </div>
         </div>
     </div>
@@ -51,16 +94,54 @@
     </div>
 
     <!-- MENU -->
-    <div class="main-content">
-        <h2 class="section-title" id="menuTitle">Our Menu</h2>
+    <div class="main-content" style="padding: 0;">
+        <h2 class="section-title" id="menuTitle" style="padding: 1rem 1rem 0.8rem; margin: 0; font-size: 1.5rem; font-weight: 700; border-bottom: 2px solid rgba(230, 57, 70, 0.3);">Our Menu</h2>
         <div class="menu-grid" id="menuGrid"></div>
+    </div>
+    
+    <!-- REVIEWS SECTION -->
+    <div class="reviews-section" style="background: linear-gradient(180deg, #0a0a0a 0%, #141414 100%); padding: 2rem 1rem; border-top: 2px solid rgba(230,57,70,0.2);">
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <img src="logo.png" alt="Antalya Shawarma" style="height: 40px; width: auto;">
+                    <div>
+                        <h2 style="color: #fff; margin: 0; font-size: 1.5rem;">Customer Reviews</h2>
+                        <p style="color: rgba(255,255,255,0.6); margin: 0.3rem 0 0 0; font-size: 0.9rem;">See what our customers say about us</p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div id="averageRatingDisplay" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 8px;">
+                        <span style="font-size: 1.5rem;">⭐</span>
+                        <span style="font-size: 1.3rem; font-weight: 700; color: #f59e0b;">4.8</span>
+                        <span style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">(0 reviews)</span>
+                    </div>
+                    <button onclick="openWriteReview()" style="background: linear-gradient(135deg, #e63946, #c1121f); color: white; border: none; padding: 0.7rem 1.2rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">✍️ Write Review</button>
+                </div>
+            </div>
+            <div id="reviewsList" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Reviews will be loaded here -->
+            </div>
+            <div id="noReviewsMessage" style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
+                <img src="logo.png" alt="Antalya Shawarma" style="height: 60px; width: auto; opacity: 0.5; margin-bottom: 1rem;">
+                <p>No reviews yet. Be the first to share your experience!</p>
+            </div>
+            <div id="showMoreReviewsContainer" style="text-align: center; margin-top: 1.5rem; display: none;">
+                <button onclick="toggleShowMoreReviews()" id="showMoreReviewsBtn" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); padding: 0.8rem 2rem; border-radius: 8px; cursor: pointer; font-size: 0.95rem;">
+                    Show more reviews ↓
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- FOOTER -->
     <div class="social-footer">
         <div class="social-content">
             <div class="footer-section">
-                <h3>🌯 Antalya Shawarma</h3>
+                <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;">
+                    <img src="logo.png" alt="Antalya Shawarma" style="height: 50px; width: auto;">
+                    <h3 style="margin: 0;">Antalya Shawarma</h3>
+                </div>
                 <p style="color: rgba(255,255,255,0.6);">Hyde's Best Shawarma Restaurant</p>
                 <p style="color: rgba(255,255,255,0.5); margin-top: 0.5rem; font-size: 0.9rem;">Traditional Kurdish, Turkish & Arabic Cuisine</p>
                 <div style="margin-top: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(34,197,94,0.2); padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid rgba(34,197,94,0.4);">
@@ -78,7 +159,7 @@
             <div class="footer-section">
                 <h3>📞 Contact</h3>
                 <div style="color: rgba(255,255,255,0.7);">📞 +44 161 536 1862</div>
-                <div style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">📧 info@antalyashawarma.com</div>
+                <div style="color: rgba(255,255,255,0.7); margin-top: 0.5rem;">📧 <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b4dddad2dbf4d5dac0d5d8cdd5c7dcd5c3d5c6d9d59ad7dbd9">[email&#160;protected]</a></div>
                 <a href="https://instagram.com/antalyashawarma_" target="_blank" style="color: #e1306c; font-size: 0.9rem; margin-top: 0.5rem; display: inline-block;">📸 @antalyashawarma_</a>
             </div>
             <div class="footer-section">
@@ -97,33 +178,55 @@
 
     <!-- FOOD DETAIL MODAL -->
     <div class="modal" id="foodModal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeModal('foodModal')">×</button>
-            <h2 id="modalFoodName"></h2>
-            <div style="text-align: center; font-size: 5rem; margin: 1rem 0;" id="modalFoodIcon"></div>
-            <p id="modalFoodDesc" style="color: rgba(255,255,255,0.7); text-align: center;"></p>
-            <p style="font-size: 2rem; color: #ff6b6b; font-weight: bold; text-align: center;" id="modalFoodPrice"></p>
+        <div class="modal-content" style="max-width: 500px; padding: 0; overflow: hidden;">
+            <button class="close-btn" onclick="closeModal('foodModal')" style="position: absolute; top: 1rem; right: 1rem; z-index: 10; background: rgba(60,60,60,0.9); width: 36px; height: 36px;">×</button>
             
-            <div id="customizationSection" style="display: none;">
-                <label style="font-size: 1.1rem; margin-bottom: 1rem; display: block; color: #ff6b6b;">🎯 Customize Your Order</label>
-                <div id="customOptions"></div>
-            </div>
-            
-            <div class="form-group">
-                <label>Quantity</label>
-                <div class="quantity-control">
-                    <button class="qty-btn" onclick="changeQuantity(-1)">-</button>
-                    <span class="qty-display" id="quantity">1</span>
-                    <button class="qty-btn" onclick="changeQuantity(1)">+</button>
+            <!-- Food Header -->
+            <div style="padding: 1.5rem; background: linear-gradient(180deg, rgba(30,30,30,1) 0%, rgba(20,20,20,1) 100%);">
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <div id="modalFoodIcon" style="width: 130px; height: 130px; background: #f5f5f5; border-radius: 12px; overflow: hidden; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 4rem;"></div>
+                    <div style="flex: 1; min-width: 0;">
+                        <h2 id="modalFoodName" style="margin: 0 0 0.5rem 0; font-size: 1.3rem; font-weight: 700; color: #fff;"></h2>
+                        <p id="modalFoodDesc" style="color: rgba(255,255,255,0.6); margin: 0; font-size: 0.9rem; line-height: 1.4;"></p>
+                    </div>
                 </div>
             </div>
             
-            <div class="form-group">
-                <label>Special Instructions</label>
-                <textarea id="specialInstructions" rows="3" placeholder="E.g., Extra spicy, no onions..."></textarea>
+            <!-- Customization Options -->
+            <div id="customizationSection" style="display: none; border-top: 6px solid rgba(230,57,70,0.15);">
+                <div style="padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Extras</h3>
+                        <span style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; color: rgba(255,255,255,0.6);">Optional</span>
+                    </div>
+                </div>
+                <div id="customOptions" style="padding: 0;"></div>
             </div>
             
-            <button class="submit-btn" onclick="addToCart()">Add to Cart - <span id="totalPrice">£0.00</span></button>
+            <!-- Special Instructions -->
+            <div style="padding: 1.2rem 1.5rem; border-top: 6px solid rgba(230,57,70,0.15);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
+                    <h3 style="margin: 0; font-size: 1rem; font-weight: 600;">Special Instructions</h3>
+                    <span style="background: rgba(255,255,255,0.1); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; color: rgba(255,255,255,0.6);">Optional</span>
+                </div>
+                <textarea id="specialInstructions" rows="2" placeholder="E.g., Extra spicy, no onions..." style="width: 100%; padding: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; font-size: 0.9rem; resize: none;"></textarea>
+            </div>
+            
+            <!-- Bottom Action Bar -->
+            <div style="padding: 1rem 1.5rem; background: rgba(15,15,15,1); border-top: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 1rem;">
+                <div style="display: flex; align-items: center; background: rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden;">
+                    <button onclick="changeQuantity(-1)" style="background: transparent; border: none; color: #e63946; width: 44px; height: 44px; font-size: 1.5rem; cursor: pointer; font-weight: 700;">−</button>
+                    <span id="quantity" style="min-width: 30px; text-align: center; font-size: 1.1rem; font-weight: 600; color: white;">1</span>
+                    <button onclick="changeQuantity(1)" style="background: transparent; border: none; color: #e63946; width: 44px; height: 44px; font-size: 1.5rem; cursor: pointer; font-weight: 700;">+</button>
+                </div>
+                <button class="submit-btn" onclick="addToCart()" style="flex: 1; margin: 0; padding: 0.9rem; background: linear-gradient(135deg, #e63946, #c1121f); border-radius: 8px; font-size: 1rem; font-weight: 700; display: flex; justify-content: center; gap: 0.5rem;">
+                    <span>Add Item</span>
+                    <span id="totalPrice" style="opacity: 0.9;">£0.00</span>
+                </button>
+            </div>
+            
+            <!-- Hidden price display for reference -->
+            <span id="modalFoodPrice" style="display: none;"></span>
         </div>
     </div>
 
@@ -149,40 +252,67 @@
                 </p>
             </div>
 
+            <!-- Forgot Password Section -->
+            <div id="forgotPasswordSection" style="display: none;">
+                <div style="background: rgba(245,158,11,0.1); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                    <h3 style="color: #f59e0b;">🔑 Reset Password</h3>
+                    <p style="color: rgba(255,255,255,0.8);">Enter your email to receive a reset code</p>
+                </div>
+                <div class="form-group">
+                    <label>Email Address</label>
+                    <input type="email" id="forgotPasswordEmail" placeholder="your@email.com">
+                </div>
+                <button class="submit-btn" onclick="sendPasswordResetCode()">📧 Send Reset Code</button>
+                <p style="text-align: center; margin-top: 1rem;">
+                    <a href="#" onclick="showForgotPasswordSection(false); return false;" style="color: #ff6b6b;">← Back to Login</a>
+                </p>
+            </div>
+
             <!-- Auth Form Section -->
             <div id="authFormSection">
                 <div class="auth-options">
-                    <button class="auth-btn google-btn" onclick="loginWithGoogle()">🔵 Continue with Google</button>
-                    <button class="auth-btn apple-btn" onclick="loginWithApple()">🍎 Continue with Apple</button>
+                    <button class="auth-btn google-btn" onclick="loginWithGoogle()">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width: 20px; height: 20px; margin-right: 8px;">
+                        Continue with Google
+                    </button>
+                    <button class="auth-btn" onclick="loginWithApple()" style="background: #000; color: #fff; border: 1px solid #333;">
+                        <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; margin-right: 8px; fill: white;">
+                            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        </svg>
+                        Continue with Apple
+                    </button>
                 </div>
                 <div class="divider">or use email</div>
                 <form onsubmit="handleEmailAuth(event)">
                     <div class="form-group" id="nameGroup" style="display: none;">
                         <label>Full Name *</label>
-                        <input type="text" id="authName" placeholder="Your full name">
+                        <input type="text" id="authName" class="form-input" placeholder="Your full name">
                     </div>
                     <div class="form-group">
                         <label>Email *</label>
-                        <input type="email" id="authEmail" placeholder="your@email.com" required>
+                        <input type="email" id="authEmail" class="form-input" placeholder="your@email.com" required>
                     </div>
                     <div class="form-group">
                         <label>Password *</label>
-                        <input type="password" id="authPassword" placeholder="Min 6 characters" required>
+                        <input type="password" id="authPassword" class="form-input" placeholder="Min 6 characters" required>
+                    </div>
+                    <div id="forgotPasswordLink" style="text-align: right; margin-bottom: 1rem;">
+                        <a href="#" onclick="showForgotPasswordSection(true); return false;" style="color: #6ba3ff; font-size: 0.9rem;">Forgot password?</a>
                     </div>
                     <div class="form-group" id="phoneGroup" style="display: none;">
                         <label>Phone Number *</label>
-                        <input type="tel" id="authPhone" placeholder="+44 7700 900123">
+                        <input type="tel" id="authPhone" class="form-input" placeholder="+44 7700 900123">
                     </div>
                     <div class="form-group" id="ageGroup" style="display: none;">
-                        <label>Age (Optional)</label>
-                        <input type="number" id="authAge" placeholder="Your age" min="13" max="120">
+                        <label>Date of Birth (Optional)</label>
+                        <input type="date" id="authDOB" class="form-input">
                     </div>
                     <div class="form-group" id="addressGroup" style="display: none;">
                         <label>Delivery Location *</label>
-                        <input type="text" id="authAddress" placeholder="Click to select on map" readonly>
-                        <button type="button" class="map-btn" onclick="pickLocation()">📍 Pick Location on Map</button>
+                        <input type="text" id="authAddress" class="form-input" placeholder="Click to select on map" readonly>
+                        <button type="button" class="btn-secondary" onclick="pickLocation()" style="margin-top: 0.5rem;">📍 Pick Location on Map</button>
                     </div>
-                    <button type="submit" class="submit-btn" id="authSubmitBtn">Login</button>
+                    <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
                 </form>
                 <p style="text-align: center; margin-top: 1rem;">
                     <span id="authToggleText">Don't have an account?</span>
@@ -233,7 +363,7 @@
             <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(102,126,234,0.1); border-radius: 10px; border: 1px solid rgba(102,126,234,0.3);">
                 <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin: 0;">
                     <strong>Demo Credentials:</strong><br>
-                    Email: staff@antalyashawarma.com<br>
+                    Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="33404752555573525d47525f4a52405b524452415e521d505c5e">[email&#160;protected]</a><br>
                     Password: staff2024
                 </p>
             </div>
@@ -294,7 +424,7 @@
             <button onclick="document.getElementById('ownerModal').style.display = 'none';" style="position: absolute; top: 1rem; right: 1rem; background: #ff4444; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; cursor: pointer;">×</button>
             
             <div style="text-align: center; margin-bottom: 2rem;">
-                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔧</div>
+                <img src="logo.png" alt="Antalya Shawarma" style="height: 60px; width: auto; margin-bottom: 0.5rem;">
                 <h2 style="color: #8b5cf6; margin: 0; font-size: 1.8rem;">Owner Access</h2>
                 <p style="color: rgba(255,255,255,0.6); margin-top: 0.5rem;">Full System Control Panel</p>
             </div>
@@ -321,7 +451,7 @@
             <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(139,92,246,0.1); border-radius: 10px; border: 1px solid rgba(139,92,246,0.3);">
                 <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin: 0;">
                     <strong>Demo Credentials:</strong><br>
-                    Email: admin@antalyashawarma.com<br>
+                    Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0d6c696064634d6c63796c61746c7e656c7a6c7f606c236e6260">[email&#160;protected]</a><br>
                     Password: admin2024<br>
                     PIN: 1234
                 </p>
@@ -335,38 +465,38 @@
             <button onclick="document.getElementById('ownerDashboard').style.display = 'none';" style="position: fixed; top: 2rem; right: 2rem; background: #ff4444; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 1.8rem; cursor: pointer; z-index: 10001;">×</button>
             
             <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); padding: 3rem; border-radius: 20px; text-align: center; color: white; margin-bottom: 2rem;">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">🔧</div>
+                <img src="logo.png" alt="Antalya Shawarma" style="height: 80px; width: auto; margin-bottom: 1rem;">
                 <h1 style="margin: 0; font-size: 2.5rem; font-weight: 800;">Owner Console</h1>
                 <p style="margin: 1rem 0 0; font-size: 1.2rem; opacity: 0.95;">Full System Access & Control Panel</p>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                 <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
-                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">💰</div>
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">💰</div>
                     <div id="revenueStat" style="font-size: 2rem; font-weight: 700;">£0.00</div>
                     <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Total Revenue</div>
                 </div>
                 
                 <div style="background: linear-gradient(135deg, #3b82f6, #2563eb); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
-                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">📦</div>
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📦</div>
                     <div id="ordersStat" style="font-size: 2rem; font-weight: 700;">0</div>
                     <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Total Orders</div>
                 </div>
                 
                 <div style="background: linear-gradient(135deg, #f59e0b, #d97706); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
-                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">⏳</div>
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⏳</div>
                     <div id="pendingStat" style="font-size: 2rem; font-weight: 700;">0</div>
                     <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Pending</div>
                 </div>
                 
                 <div style="background: linear-gradient(135deg, #ec4899, #db2777); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
-                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">👥</div>
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">👥</div>
                     <div id="usersStat" style="font-size: 2rem; font-weight: 700;">0</div>
                     <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Users</div>
                 </div>
                 
                 <div style="background: linear-gradient(135deg, #14b8a6, #0d9488); padding: 2rem; border-radius: 15px; text-align: center; color: white;">
-                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">🚗</div>
+                    <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🚗</div>
                     <div id="driverCountStat" style="font-size: 2rem; font-weight: 700;">3</div>
                     <div style="font-size: 0.95rem; opacity: 0.9; margin-top: 0.5rem;">Drivers</div>
                 </div>
@@ -374,7 +504,7 @@
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
                 <button onclick="openMenuManager()" style="padding: 2.5rem; background: linear-gradient(135deg, #e63946, #c1121f); color: white; border: none; border-radius: 15px; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
-                    <span style="font-size: 3rem;">🍽️</span>
+                    <img src="logo.png" alt="" style="height: 50px; width: auto;">
                     <span>Menu Management</span>
                     <span style="font-size: 0.85rem; opacity: 0.9; font-weight: 400;">Add/edit food & categories</span>
                 </button>
@@ -408,8 +538,71 @@
             <div style="margin-top: 2rem; background: rgba(239,68,68,0.1); border: 2px solid rgba(239,68,68,0.3); padding: 2rem; border-radius: 15px;">
                 <h3 style="color: #ef4444; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">⚠️ Danger Zone</h3>
                 <p style="color: rgba(255,255,255,0.7); margin-bottom: 1rem; font-size: 0.9rem;">These actions cannot be undone. Please proceed with caution.</p>
-                <button onclick="resetAllData()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    🗑️ Reset All Data
+                <button onclick="showResetOptions()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem 2rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🗑️ Reset Data Options
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- RESET OPTIONS MODAL -->
+    <div class="modal" id="resetOptionsModal" style="display: none; z-index: 10005;">
+        <div class="modal-content" style="max-width: 450px;">
+            <button class="close-btn" onclick="closeModal('resetOptionsModal')">×</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">⚠️</div>
+                <h2 style="color: #ef4444;">Reset Data Options</h2>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Select what you want to reset</p>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem;">
+                <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);">
+                    <input type="checkbox" id="resetUsers" style="width: 20px; height: 20px; accent-color: #ef4444;">
+                    <div>
+                        <div style="font-weight: 600;">👥 User Accounts</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Delete all customer accounts</div>
+                    </div>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);">
+                    <input type="checkbox" id="resetOrders" style="width: 20px; height: 20px; accent-color: #ef4444;">
+                    <div>
+                        <div style="font-weight: 600;">📦 Order History</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Delete all orders (pending & completed)</div>
+                    </div>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);">
+                    <input type="checkbox" id="resetDrivers" style="width: 20px; height: 20px; accent-color: #ef4444;">
+                    <div>
+                        <div style="font-weight: 600;">🚗 Driver Data</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Delete all driver accounts & locations</div>
+                    </div>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);">
+                    <input type="checkbox" id="resetFavorites" style="width: 20px; height: 20px; accent-color: #ef4444;">
+                    <div>
+                        <div style="font-weight: 600;">❤️ Favorites & Notifications</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Delete all user favorites & notifications</div>
+                    </div>
+                </label>
+                
+                <label style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);">
+                    <input type="checkbox" id="resetMenu" style="width: 20px; height: 20px; accent-color: #ef4444;">
+                    <div>
+                        <div style="font-weight: 600;">🍽️ Menu to Default</div>
+                        <div style="font-size: 0.8rem; color: rgba(255,255,255,0.5);">Reset menu to original items</div>
+                    </div>
+                </label>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <button onclick="closeModal('resetOptionsModal')" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    Cancel
+                </button>
+                <button onclick="resetSelectedData()" style="background: linear-gradient(45deg, #ef4444, #dc2626); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🗑️ Reset Selected
                 </button>
             </div>
         </div>
@@ -600,6 +793,69 @@
         </div>
     </div>
 
+    <!-- WRITE REVIEW MODAL -->
+    <div class="modal" id="writeReviewModal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="close-btn" onclick="closeModal('writeReviewModal')">×</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <img src="logo.png" alt="Antalya Shawarma" style="height: 60px; width: auto; margin-bottom: 0.5rem;">
+                <h2 style="color: #f59e0b;">Write a Review</h2>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Share your experience with others</p>
+            </div>
+            
+            <form onsubmit="submitReview(event)">
+                <!-- Star Rating -->
+                <div class="form-group" style="text-align: center;">
+                    <label style="display: block; margin-bottom: 0.8rem;">Your Rating *</label>
+                    <div id="starRating" style="display: flex; justify-content: center; gap: 0.5rem; font-size: 2rem; cursor: pointer;">
+                        <span onclick="setRating(1)" data-star="1">☆</span>
+                        <span onclick="setRating(2)" data-star="2">☆</span>
+                        <span onclick="setRating(3)" data-star="3">☆</span>
+                        <span onclick="setRating(4)" data-star="4">☆</span>
+                        <span onclick="setRating(5)" data-star="5">☆</span>
+                    </div>
+                    <input type="hidden" id="reviewRating" value="0">
+                </div>
+                
+                <!-- Review Text -->
+                <div class="form-group">
+                    <label>Your Review *</label>
+                    <textarea id="reviewText" rows="4" placeholder="Tell us about your experience..." required style="resize: vertical;"></textarea>
+                </div>
+                
+                <button type="submit" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; font-size: 1rem;">
+                    ⭐ Submit Review
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- VIEW REPLIES MODAL -->
+    <div class="modal" id="repliesModal" style="display: none;">
+        <div class="modal-content" style="max-width: 550px; max-height: 80vh; overflow-y: auto;">
+            <button class="close-btn" onclick="closeModal('repliesModal')">×</button>
+            <div style="display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1rem;">
+                <img src="logo.png" alt="Antalya Shawarma" style="height: 35px; width: auto;">
+                <h2 style="color: #e63946; margin: 0;">Restaurant Replies</h2>
+            </div>
+            <div id="repliesContent"></div>
+            
+            <!-- Owner Reply Form (Only visible to owner) -->
+            <div id="ownerReplySection" style="display: none; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem;">
+                    <img src="logo.png" alt="Antalya Shawarma" style="height: 25px; width: auto;">
+                    <span style="color: #f59e0b; font-weight: 600; font-size: 0.9rem;">Reply as Restaurant Owner</span>
+                </div>
+                <div class="form-group">
+                    <textarea id="replyText" rows="2" placeholder="Write your reply to this customer..."></textarea>
+                </div>
+                <button onclick="submitOwnerReply()" style="background: linear-gradient(135deg, #e63946, #c1121f); color: white; border: none; padding: 0.7rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    Send Reply
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- NOTIFICATIONS MODAL -->
     <div class="modal" id="notificationsModal">
         <div class="modal-content">
@@ -652,8 +908,8 @@
                     <input type="text" id="editName" placeholder="Your full name" required>
                 </div>
                 <div class="form-group">
-                    <label>Age</label>
-                    <input type="number" id="editAge" placeholder="Your age" min="13" max="120">
+                    <label>Date of Birth</label>
+                    <input type="date" id="editDOB" placeholder="Your date of birth">
                 </div>
                 <div class="form-group">
                     <label>Phone Number *</label>
@@ -666,8 +922,56 @@
                         📍 Pick Location on Map
                     </button>
                 </div>
+                
                 <button type="submit" class="submit-btn" style="background: linear-gradient(45deg, #3b82f6, #2563eb);">💾 Save Changes</button>
             </form>
+            
+            <!-- Change Password Button -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1.5rem; margin-top: 1.5rem;">
+                <button onclick="openChangePasswordModal()" style="background: transparent; color: #e63946; border: 2px solid rgba(230,57,70,0.4); padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                    🔑 Change Password
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CHANGE PASSWORD MODAL -->
+    <div class="modal" id="changePasswordModal" style="display: none;">
+        <div class="modal-content" style="max-width: 420px;">
+            <button class="close-btn" onclick="closeModal('changePasswordModal')">×</button>
+            <div style="text-align: center; margin-bottom: 1.5rem;">
+                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔐</div>
+                <h2 style="color: #e63946;">Change Password</h2>
+                <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">Create a strong password to protect your account</p>
+            </div>
+            
+            <form onsubmit="handleChangePassword(event)">
+                <div class="form-group">
+                    <label>Current Password *</label>
+                    <input type="password" id="cpCurrentPassword" placeholder="••••••" required>
+                </div>
+                <div class="form-group">
+                    <label>New Password *</label>
+                    <input type="password" id="cpNewPassword" placeholder="••••••" required>
+                    <small style="color: rgba(255,255,255,0.5); font-size: 0.8rem;">Minimum 6 characters</small>
+                </div>
+                <div class="form-group">
+                    <label>Confirm New Password *</label>
+                    <input type="password" id="cpConfirmPassword" placeholder="••••••" required>
+                </div>
+                
+                <button type="submit" style="background: linear-gradient(135deg, #e63946, #c1121f); color: white; border: none; padding: 1rem; border-radius: 8px; cursor: pointer; font-weight: 700; width: 100%; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: 2px solid rgba(230,57,70,0.5);">
+                    🔐 CHANGE PASSWORD
+                </button>
+            </form>
+            
+            <!-- Forgot Password Link -->
+            <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-bottom: 0.5rem;">Forgot your current password?</p>
+                <button onclick="openForgotPasswordFromChangePassword()" style="background: transparent; color: #f59e0b; border: none; cursor: pointer; font-size: 0.95rem; font-weight: 600; text-decoration: underline;">
+                    🔑 Reset via Email
+                </button>
+            </div>
         </div>
     </div>
 
@@ -960,7 +1264,10 @@
     </div>
 
     <!-- SCRIPTS -->
+    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
     <script src="script.js?v=3.0"></script>
+    <script src="owner.js?v=3.0"></script>
+    <script src="driver.js?v=3.0"></script>
     <script src="utils.js?v=3.0"></script>
     <script>
         // Card field toggle
@@ -1125,9 +1432,10 @@
                     Object.entries(categories).map(([key, cat]) => 
                         `<option value="${key}">${cat.name}</option>`
                     ).join('');
+                select.value = catKey;
             }
             if (originalOpenEditFood) originalOpenEditFood(catKey, foodId);
         };
     </script>
 </body>
-</html>
+</html> 

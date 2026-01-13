@@ -1,0 +1,76 @@
+/* Redesign overrides and component styles
+   Focus: categories, payment form, profile form, and improved accessibility
+*/
+:root{
+  --rs-bg:#0b0a09;
+  --rs-panel:#141210;
+  --rs-accent:#c9603a;
+  --rs-accent-2:#e07a52;
+  --rs-text:#efeae6;
+  --rs-muted:rgba(255,255,255,0.35);
+  --rs-radius:12px;
+}
+
+/* Ensure this stylesheet has higher specificity where needed */
+
+/* Categories - compact, visible strip */
+.categories-section{
+  position:sticky;
+  top:72px;
+  z-index:12000;
+  background:linear-gradient(180deg, rgba(11,10,9,0.9), rgba(11,10,9,0.86));
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.categories-wrapper{max-width:1200px;margin:0 auto;padding:8px 20px;}
+.categories-scroll{display:flex;gap:10px;overflow-x:auto;padding:6px 4px;align-items:center;}
+.categories-scroll .categories{display:flex;gap:10px;}
+
+/* New pill style */
+.category-item, .category-pill{display:inline-flex;align-items:center;gap:10px;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.03);color:var(--rs-text);cursor:pointer;white-space:nowrap;}
+.category-item .category-name, .category-pill span{font-weight:600;color:var(--rs-text);font-size:0.95rem}
+.category-item .category-icon, .category-pill img{width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0}
+.category-item.active, .category-pill.active{background:linear-gradient(90deg,var(--rs-accent),var(--rs-accent-2));box-shadow:0 8px 26px rgba(201,96,58,0.22);border-color:rgba(255,255,255,0.06);color:#fff}
+
+/* Improve focus + keyboard visibility */
+.category-item:focus{outline:3px solid rgba(201,96,58,0.2);outline-offset:3px}
+
+/* Payment form */
+.payment-card, .card-fields, .checkout-section{
+  background:linear-gradient(180deg,var(--rs-panel), rgba(20,18,16,0.98));
+  border:1px solid rgba(255,255,255,0.04);
+  padding:18px;border-radius:var(--rs-radius);color:var(--rs-text);
+}
+.payment-card h3, .checkout-section h3{font-weight:700;margin:0 0 8px 0}
+.card-fields input, .card-fields select, .form-input{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:12px;border-radius:8px;color:var(--rs-text);width:100%;}
+.card-fields input::placeholder{color:var(--rs-muted)}
+.card-fields .row{display:flex;gap:10px}
+.card-fields .row .col{flex:1}
+
+.btn-pay, .btn-primary{background:linear-gradient(90deg,var(--rs-accent),var(--rs-accent-2));color:white;padding:12px 18px;border-radius:10px;border:none;cursor:pointer;font-weight:700}
+.btn-pay:focus{outline:3px solid rgba(201,96,58,0.18)}
+
+/* Profile form */
+.profile-header{display:flex;align-items:center;gap:16px;padding:18px;background:linear-gradient(180deg,rgba(20,20,20,0.95),rgba(18,18,18,0.95));border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+.profile-header .avatar{width:84px;height:84px;border-radius:12px;background:linear-gradient(135deg,var(--rs-accent),#a84d2d);display:flex;align-items:center;justify-content:center;font-size:28px;color:white}
+.profile-form{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.profile-form .full{grid-column:1/-1}
+.profile-form label{font-size:0.85rem;color:var(--rs-muted);display:block;margin-bottom:6px}
+.profile-form input, .profile-form textarea{background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:var(--rs-text);width:100%}
+
+/* Mobile adjustments */
+@media (max-width:900px){
+  .profile-form{grid-template-columns:1fr}
+  .categories-wrapper{padding:8px}
+  .category-item .category-name{display:inline-block}
+}
+
+/* Make modals sit above everything */
+.modal{z-index:11000}
+
+/* Utility helper for visible separators */
+.sep{height:1px;background:rgba(255,255,255,0.03);margin:12px 0;border-radius:2px}
+
+/* Smooth scroll mask for categories fade edges */
+.categories-wrapper::before, .categories-wrapper::after{pointer-events:none;}
+.categories-wrapper::before{content:'';position:absolute;left:0;top:0;bottom:0;width:40px;background:linear-gradient(90deg,var(--rs-bg),transparent)}
+.categories-wrapper::after{content:'';position:absolute;right:0;top:0;bottom:0;width:40px;background:linear-gradient(-90deg,var(--rs-bg),transparent)}
