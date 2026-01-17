@@ -4,9 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Antalya Shawarma - Authentic Turkish Shawarma & Kebabs</title>
+
+    <!-- Add after line 6 (after viewport meta) -->
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
+<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+
+
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="mobile.css">
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCT7AO_PmeURgQTZUWNRt83jUsSWXZq3aU&libraries=places"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <meta name="google-signin-client_id" content="888032224287-20qgalf8pvpg7s7589il4f025cva4944.apps.googleusercontent.com">
+    
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
+<script type="text/javascript"
+        src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
+</script>
+<script type="text/javascript">
+   (function(){
+      emailjs.init({
+        publicKey: "RP9gGNpu9OJx0Laq4",
+      });
+   })();
+</script>
+    <script src="script.js" defer></script> 
+
+    
 </head>
 <body>
 
@@ -46,6 +72,10 @@
     
     <!-- MOBILE BOTTOM NAVIGATION (separate element for mobile) -->
     <nav class="mobile-bottom-nav" id="mobileBottomNav">
+        <button type="button" class="mobile-nav-item mobile-owner-btn" id="mobileOwnerBtn" onclick="window.showOwnerDashboardDirect()" style="display: none;">
+            <span class="mobile-nav-icon">👔</span>
+            <span class="mobile-nav-label">Owner</span>
+        </button>
         <button type="button" class="mobile-nav-item" onclick="window.showNotifications()">
             <span class="mobile-nav-icon">🔔</span>
             <span class="mobile-nav-badge" id="mobileNotifyBadge">0</span>
@@ -92,6 +122,7 @@
             <!-- Categories will be rendered by JavaScript -->
         </div>
     </div>
+<div id="categoryContainer" class="category-container"></div>
 
     <!-- MENU -->
     <div class="main-content" style="padding: 0;">
@@ -310,9 +341,9 @@
                     <div class="form-group" id="addressGroup" style="display: none;">
                         <label>Delivery Location *</label>
                         <input type="text" id="authAddress" class="form-input" placeholder="Click to select on map" readonly>
-                        <button type="button" class="btn-secondary" onclick="pickLocation()" style="margin-top: 0.5rem;">📍 Pick Location on Map</button>
+                        <button type="button" class="submit-btn" onclick="pickLocation()" style="margin-top: 0.5rem; background: linear-gradient(45deg, #3b82f6, #2563eb);">📍 Pick Location on Map</button>
                     </div>
-                    <button type="submit" class="btn-primary" id="authSubmitBtn">Login</button>
+                    <button type="submit" class="submit-btn" id="authSubmitBtn" style="background: linear-gradient(45deg, #ff6b6b, #ee5a6f);">Login</button>
                 </form>
                 <p style="text-align: center; margin-top: 1rem;">
                     <span id="authToggleText">Don't have an account?</span>
@@ -448,14 +479,7 @@
                 🔓 Unlock Owner Mode
             </button>
             
-            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(139,92,246,0.1); border-radius: 10px; border: 1px solid rgba(139,92,246,0.3);">
-                <p style="color: rgba(255,255,255,0.7); font-size: 0.85rem; margin: 0;">
-                    <strong>Demo Credentials:</strong><br>
-                    Email: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="0d6c696064634d6c63796c61746c7e656c7a6c7f606c236e6260">[email&#160;protected]</a><br>
-                    Password: admin2024<br>
-                    PIN: 1234
-                </p>
-            </div>
+    
         </div>
     </div>
 

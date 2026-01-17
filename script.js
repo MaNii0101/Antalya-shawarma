@@ -7,13 +7,14 @@
 // ========================================
 // UK DELIVERY CONFIGURATION
 // ========================================
+
 const UK_CONFIG = {
     restaurant: {
         name: 'Antalya Shawarma',
         address: '181 Market St, Hyde SK14 1HF',
         phone: '+44 161 536 1862',
-        lat: 53.4514,
-        lng: -2.0839,
+        lat: 53.447830,
+        lng: -2.076047,
         openTime: 11, // 11:00 AM
         closeTime: 23, // 11:00 PM
         lastOrderTime: 22.5 // 10:30 PM (22:30)
@@ -26,6 +27,16 @@ const UK_CONFIG = {
     maxDeliveryDistance: 6,
     currency: '£'
 };
+
+
+// Security: Input Sanitization
+function sanitizeInput(input) {
+    if (typeof input !== 'string') return input;
+    return input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/javascript:/gi, '')
+                .replace(/on\w+\s*=/gi, '')
+                .trim();
+}
 
 // Get UK time (handles BST/GMT automatically)
 function getUKTime() {
@@ -83,7 +94,7 @@ function resetSelectedData() {
     }
     
     let message = 'This will reset:\n';
-    if (resetUsers) message += '• All user accounts\n';
+    if (resetUsers) message += '• All user accounts & reviews\n';
     if (resetOrders) message += '• All order history\n';
     if (resetDrivers) message += '• All driver data\n';
     if (resetFavorites) message += '• All favorites & notifications\n';
@@ -98,6 +109,10 @@ function resetSelectedData() {
         localStorage.removeItem('currentUser');
         userDatabase = [];
         currentUser = null;
+        
+        // Also delete all reviews since users are deleted
+        localStorage.removeItem('restaurantReviews');
+        restaurantReviews = [];
     }
     
     if (resetOrders) {
@@ -151,6 +166,31 @@ const RESTAURANT_CREDENTIALS = {
     email: 'staff@antalyashawarma.com',
     password: 'staff2024'
 };
+
+// Security: Input Sanitization
+function sanitizeInput(input) {
+    if (typeof input !== 'string') return input;
+    return input.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/javascript:/gi, '')
+                .replace(/on\w+\s*=/gi, '')
+                .trim();
+}
+
+// Session Protection
+// Generate session token
+const SESSION_TOKEN = 'ast_' + Math.random().toString(36).substr(2, 16) + Date.now().toString(36);
+localStorage.setItem('sessionToken', SESSION_TOKEN);
+
+// Validate session before sensitive operations
+function validateSession() {
+    return localStorage.getItem('sessionToken') === SESSION_TOKEN;
+}
+
+// Password Strength Validation
+function isStrongPassword(password) {
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    return strongRegex.test(password);
+}
 
 // ========================================
 // REAL ANTALYA SHAWARMA MENU DATA
@@ -405,6 +445,44 @@ let categories = {
     drinks: { name: 'Drinks', icon: '🥤', image: '' }
 };
 
+function renderCategories() {
+    const container = document.getElementById('categoryContainer');
+    if (!container) {
+        console.error('❌ categoryContainer not found in HTML');
+        return;
+    }
+
+    container.innerHTML = '';
+
+    Object.keys(categories).forEach(key => {
+        // Skip empty categories
+        if (!menuData[key] || menuData[key].length === 0) return;
+
+        const cat = categories[key];
+
+        const btn = document.createElement('button');
+        btn.className = 'category-btn';
+        btn.innerHTML = `
+            <span class="cat-icon">${cat.icon}</span>
+            <span class="cat-name">${cat.name}</span>
+        `;
+
+        btn.onclick = () => displayMenu(key);
+
+        container.appendChild(btn);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadMenuData();
+    loadData();
+
+    renderCategories();
+    displayMenu(currentCategory);
+    updateOwnerButtonVisibility(); // ADD THIS
+});
+
+
 // Load saved menu data from localStorage
 function loadMenuData() {
     const savedMenu = localStorage.getItem('menuData');
@@ -422,25 +500,23 @@ function loadMenuData() {
             }
         } catch(e) { console.log('Error loading menu data'); }
     }
-    if (savedCategories) {
-        try {
-            const parsed = JSON.parse(savedCategories);
-            if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-                Object.keys(parsed).forEach(key => {
-                    if (categories[key]) {
-                        categories[key] = { ...categories[key], ...parsed[key] };
-                    } else if (parsed[key] && parsed[key].name) {
-                        categories[key] = parsed[key];
-                    }
-                });
+if (savedCategories) {
+    try {
+        const parsed = JSON.parse(savedCategories);
+        Object.keys(parsed).forEach(key => {
+            if (categories[key]) {
+                categories[key] = { ...categories[key], ...parsed[key] };
             }
-        } catch(e) { console.log('Error loading categories'); }
+        });
+    } catch (e) {
+        console.warn('⚠️ Bad category data, resetting...');
+        localStorage.removeItem('categories');
     }
-    
+}
+
     // Ensure we have valid data - if menuData is empty, reload page without cache
     const totalItems = Object.values(menuData).flat().length;
     if (totalItems === 0) {
-        console.log('Menu data empty, clearing localStorage...');
         localStorage.removeItem('menuData');
         localStorage.removeItem('categories');
     }
@@ -648,11 +724,98 @@ function formatPrice(amount) {
 function generateVerificationCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
+let otpTimers = {}; // Track OTP timers per email
 
-function sendVerificationEmail(email, code) {
-    console.log(`📧 Verification code for ${email}: ${code}`);
-    alert(`📧 Verification Code Sent!\n\nA 6-digit code has been sent to:\n${email}\n\n(Demo: Code is ${code})`);
+async function sendVerificationEmail(email, code, type = 'verification') {
+    const now = Date.now();
+    const lastSent = otpTimers[email]?.lastSent || 0;
+    const timeSinceLastSend = now - lastSent;
+    
+    if (timeSinceLastSend < 90000) {
+        const waitTime = Math.ceil((90000 - timeSinceLastSend) / 1000);
+        alert(`⏱️ Please wait ${waitTime} seconds before requesting a new code.`);
+        return false;
+    }
+    
+    try {
+        let templateParams = {
+            to_email: email,
+            code: code,
+            from_name: "Antalya Shawarma Hyde",
+            title: type === 'password_reset' ? "Password Reset Code" : "Email Verification",
+            name: "Customer"
+        };
+        
+           await emailjs.send(
+              "service_33hew7v",
+             "template_ca0ft4s",
+             templateParams
+        );
+        
+        otpTimers[email] = {
+            lastSent: now,
+            expiresAt: now + 600000,
+            canResendAt: now + 90000
+        };
+        
+        startOTPCountdown(email);
+        console.log('✅ Verification email sent successfully');
+        alert('📧 Code sent! Check your email.\n\n⏰ May take 1-3 minutes to arrive.\n\nCheck spam folder if needed.'); // ADD THIS
+        return true;
+    } catch (error) {
+        console.error('❌ EmailJS Error:', error);
+        alert('❌ Failed to send verification email. Please try again.');
+        return false;
+    }
 }
+
+function startOTPCountdown(email) {
+    const timer = otpTimers[email];
+    if (!timer) return;
+    
+    const countdownElement = document.getElementById('otpCountdown');
+    const resendBtn = document.getElementById('resendCodeBtn');
+    
+    if (!countdownElement) return;
+    
+    const updateCountdown = () => {
+        const now = Date.now();
+        const timeLeft = Math.max(0, Math.ceil((timer.canResendAt - now) / 1000));
+        
+        if (timeLeft > 0) {
+            countdownElement.textContent = `Resend code in ${timeLeft}s`;
+            if (resendBtn) resendBtn.disabled = true;
+        } else {
+            countdownElement.textContent = 'You can now request a new code';
+            if (resendBtn) {
+                resendBtn.disabled = false;
+                resendBtn.textContent = '📧 Resend Code';
+            }
+            clearInterval(timer.interval);
+        }
+    };
+    
+    updateCountdown();
+    timer.interval = setInterval(updateCountdown, 1000);
+}
+
+function canResendOTP(email) {
+    const timer = otpTimers[email];
+    if (!timer) return true;
+    return Date.now() >= timer.canResendAt;
+}
+
+function canSendCode() {
+    const last = localStorage.getItem("lastCodeTime");
+    if (!last) return true;
+
+    const diff = Date.now() - Number(last);
+    return diff > 60 * 1000; // 1 minute
+}
+
+
+
+
 
 // Validation functions
 function isValidEmail(email) {
@@ -729,7 +892,7 @@ function playNotificationSound() {
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 0.5);
     } catch(e) {
-        console.log('Audio not supported');
+      
     }
 }
 
@@ -789,6 +952,7 @@ function loadData() {
     }
     
     window.driverSystem.load();
+    updateOwnerButtonVisibility();
 }
 
 function saveCart() {
@@ -2405,6 +2569,7 @@ function sendPasswordResetCode() {
         return;
     }
     
+    
     // Generate reset code
     const resetCode = generateVerificationCode();
     pendingVerification = {
@@ -2414,8 +2579,7 @@ function sendPasswordResetCode() {
     };
     
     // Show code in console and alert (in real app, send email)
-    console.log('Password Reset Code for', email, ':', resetCode);
-    alert(`📧 Password reset code sent!\n\nFor demo: Your code is ${resetCode}\n\n(In production, this would be sent to your email)`);
+    alert(`📧 Password reset Verification code sent to your email!`);
     
     // Show code entry
     document.getElementById('forgotPasswordSection').innerHTML = `
@@ -2484,26 +2648,53 @@ function handleEmailAuth(event) {
     
     const email = document.getElementById('authEmail').value.trim();
     const password = document.getElementById('authPassword').value;
+    
+    // Check for OWNER credentials first
+    if (email === OWNER_CREDENTIALS.email && password === OWNER_CREDENTIALS.password) {
+        closeModal('loginModal');
+        showOwnerPinEntry();
+        return;
+    }
+}
+
+async function handleEmailAuth(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('authEmail').value.trim().toLowerCase();
+    const password = document.getElementById('authPassword').value;
     const name = document.getElementById('authName')?.value.trim();
     const phone = document.getElementById('authPhone')?.value.trim();
     const dob = document.getElementById('authDOB')?.value;
     
+    // Validate email
     const emailValidation = isValidEmail(email);
     if (!emailValidation.valid) {
         alert(emailValidation.message);
         return;
     }
     
-    if (password.length < 6) {
-        alert('❌ Password must be at least 6 characters');
+    // Strong password validation
+    if (password.length < 8) {
+        alert('❌ Password must be at least 8 characters');
         return;
     }
     
-    // Check for OWNER credentials - hidden access via login form
-    if (email === OWNER_CREDENTIALS.email && password === OWNER_CREDENTIALS.password) {
-        closeModal('loginModal');
-        showOwnerPinEntry();
+    // Check password strength for new accounts
+    if (isSignUpMode && !isStrongPassword(password)) {
+        alert('❌ Password must contain:\n• Uppercase letter\n• Lowercase letter\n• Number\n• Special character (@$!%*?&#)');
         return;
+    }
+    
+    // Check for OWNER credentials - ONLY show if correct email
+    if (email === OWNER_CREDENTIALS.email) {
+        if (password === OWNER_CREDENTIALS.password) {
+            closeModal('loginModal');
+            showOwnerPinEntry();
+            return;
+        } else {
+            alert('❌ Invalid credentials');
+            return;
+        }
     }
     
     // Check for RESTAURANT STAFF credentials
@@ -2519,71 +2710,273 @@ function handleEmailAuth(event) {
     if (driver && driver.password === password) {
         closeModal('loginModal');
         window.driverSystem.currentDriver = driver;
-        showDriverDashboard();
+        window.driverSystem.showDriverDashboard(driver);
         return;
     }
     
     if (isSignUpMode) {
-        const existingUser = userDatabase.find(u => u.email === email);
-        if (existingUser) {
-            alert('❌ Email already registered!');
-            return;
-        }
-        
+        // SIGN UP MODE
         if (!name || name.length < 2) {
-            alert('❌ Name must be at least 2 characters');
+            alert('❌ Please enter your full name');
             return;
         }
         
         if (phone && !isValidPhone(phone)) {
-            alert('❌ Invalid phone number');
+            alert('❌ Invalid UK phone number');
+            return;
+        }
+        
+        // Check if user exists
+        const existingUser = userDatabase.find(u => u.email === email);
+        if (existingUser) {
+            alert('❌ An account with this email already exists');
             return;
         }
         
         // Generate verification code
         const verificationCode = generateVerificationCode();
+        
+        // Send verification email
+        const emailSent = await sendVerificationEmail(email, verificationCode, 'verification');
+        
+        if (!emailSent) {
+            return; // Error already shown
+        }
+        
+        // Store pending registration
         pendingVerification = {
             email: email,
             password: password,
             name: name,
-            phone: phone,
+            phone: phone || null,
             dob: dob || null,
             code: verificationCode,
-            type: 'signup'
+            type: 'registration',
+            expiresAt: Date.now() + 600000 // 10 minutes
         };
         
-        sendVerificationEmail(email, verificationCode);
-        
-        document.getElementById('authFormSection').style.display = 'none';
-        document.getElementById('emailVerificationSection').style.display = 'block';
-        document.getElementById('verifyEmailDisplay').textContent = email;
+        // Show verification modal
+        showVerificationModal(email, 'registration');
         
     } else {
-        // Login
-        const existingUser = userDatabase.find(u => u.email === email);
-        if (!existingUser) {
-            alert('❌ Account not found!');
+        // LOGIN MODE
+        const user = userDatabase.find(u => u.email === email);
+        
+        if (!user) {
+            alert('❌ No account found with this email');
             return;
         }
         
-        if (existingUser.password !== password) {
-            alert('❌ Incorrect password!');
+        if (user.password !== password) {
+            alert('❌ Incorrect password');
             return;
         }
         
-        // Send verification code for login
+        // Generate 2FA code
         const verificationCode = generateVerificationCode();
+        
+        // Send 2FA email
+        const emailSent = await sendVerificationEmail(email, verificationCode, '2fa');
+        
+        if (!emailSent) {
+            return;
+        }
+        
+        // Store pending login
         pendingVerification = {
-            user: existingUser,
+            email: email,
             code: verificationCode,
-            type: 'login'
+            type: 'login',
+            user: user,
+            expiresAt: Date.now() + 600000
         };
         
-        sendVerificationEmail(email, verificationCode);
+        // Show verification modal
+        showVerificationModal(email, 'login');
+    }
+}
+
+// New helper function for password strength
+function isStrongPassword(password) {
+    // At least 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+    const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    return strongRegex.test(password);
+}
+
+// New function to show verification modal
+function showVerificationModal(email, type) {
+    closeModal('loginModal');
+    
+    const modal = document.createElement('div');
+    modal.id = 'verificationModal';
+    modal.className = 'modal';
+    modal.style.display = 'flex';
+    
+    const typeText = type === 'registration' ? 'Registration' : 'Login';
+    const messageText = type === 'registration' ? 'Complete your registration' : 'Complete your login';
+    
+    modal.innerHTML = `
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal('verificationModal')">&times;</button>
+            <h2>🔐 Email Verification</h2>
+            <div style="background: rgba(230,57,70,0.1); padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">
+                <p style="color: rgba(255,255,255,0.9);">📧 Verification code sent to:</p>
+                <p style="color: #ff6b6b; font-weight: 600; margin-top: 0.5rem;">${email}</p>
+                <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin-top: 1rem;">${messageText}</p>
+            </div>
+            <div class="form-group">
+                <label>Enter 6-Digit Code *</label>
+                <input type="text" id="verificationCodeInput" placeholder="000000" maxlength="6" 
+                    style="text-align: center; font-size: 1.8rem; letter-spacing: 0.5rem; font-weight: 600;"
+                    autocomplete="off">
+            </div>
+            <div style="text-align: center; margin: 1rem 0; color: rgba(255,255,255,0.7); font-size: 0.9rem;">
+                <div id="otpCountdown">Initializing...</div>
+            </div>
+            <button class="submit-btn" onclick="verifyEmailCode()">✅ Verify Code</button>
+            <button class="submit-btn" id="resendCodeBtn" onclick="resendVerificationCode()" 
+                style="background: rgba(255,255,255,0.1); margin-top: 0.5rem;">
+                📧 Resend Code
+            </button>
+            <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; color: rgba(255,255,255,0.6);">
+                Code expires in 10 minutes
+            </p>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Start countdown
+    setTimeout(() => startOTPCountdown(email), 100);
+    
+    // Auto-focus input
+    setTimeout(() => {
+        const input = document.getElementById('verificationCodeInput');
+        if (input) input.focus();
+    }, 300);
+}
+
+// Verify email code
+function verifyEmailCode() {
+    const codeInput = document.getElementById('verificationCodeInput');
+    const enteredCode = codeInput.value.trim();
+    
+    if (!pendingVerification) {
+        alert('❌ No verification session found. Please try again.');
+        closeModal('verificationModal');
+        return;
+    }
+    
+    // Check expiration
+    if (Date.now() > pendingVerification.expiresAt) {
+        alert('❌ Verification code expired. Please request a new one.');
+        closeModal('verificationModal');
+        pendingVerification = null;
+        return;
+    }
+    
+    if (enteredCode !== pendingVerification.code) {
+        alert('❌ Invalid code. Please check and try again.');
+        codeInput.value = '';
+        codeInput.focus();
+        return;
+    }
+    
+    // Code is correct!
+    if (pendingVerification.type === 'registration') {
+        // Complete registration
+        const newUser = {
+            id: Date.now(),
+            email: pendingVerification.email,
+            password: pendingVerification.password,
+            name: pendingVerification.name,
+            phone: pendingVerification.phone,
+            dob: pendingVerification.dob,
+            address: null,
+            joinedDate: new Date().toLocaleDateString('en-GB'),
+            orders: [],
+            verified: true
+        };
         
-        document.getElementById('authFormSection').style.display = 'none';
-        document.getElementById('emailVerificationSection').style.display = 'block';
-        document.getElementById('verifyEmailDisplay').textContent = email;
+        userDatabase.push(newUser);
+        currentUser = newUser;
+        saveData();
+        
+        closeModal('verificationModal');
+        alert('✅ Account created successfully!\n\nWelcome to Antalya Shawarma! 🎉');
+        updateAuthUI();
+        
+    } else if (pendingVerification.type === 'login') {
+        // Complete login
+    currentUser = pendingVerification.user;
+saveData();
+
+closeModal('verificationModal');
+alert('✅ Login successful!\n\nWelcome back! 👋');
+updateAuthUI();
+updateOwnerButtonVisibility(); // ADD THIS LINE
+
+function updateAuthUI() {
+
+
+   function updateOwnerButtonVisibility() {
+    // Desktop owner button
+    const desktopOwnerBtn = document.getElementById('ownerAccessBtn');
+    // Mobile owner button
+    const mobileOwnerBtn = document.getElementById('mobileOwnerBtn');
+    
+    // Only show if user is logged in AND is the owner
+    const shouldShow = currentUser && currentUser.email === OWNER_CREDENTIALS.email;
+    
+    if (desktopOwnerBtn) {
+        desktopOwnerBtn.style.display = shouldShow ? 'flex' : 'none';
+    }
+    if (mobileOwnerBtn) {
+        mobileOwnerBtn.style.display = shouldShow ? 'flex' : 'none';
+    }
+    
+}
+  updateOwnerButtonVisibility();
+}
+
+}
+
+
+    }
+    
+    pendingVerification = null;
+
+
+
+// Resend verification code
+async function resendVerificationCode() {
+    if (!pendingVerification) {
+        alert('❌ No active verification session');
+        return;
+    }
+    
+    const email = pendingVerification.email;
+    
+    if (!canResendOTP(email)) {
+        const timer = otpTimers[email];
+        const waitTime = Math.ceil((timer.canResendAt - Date.now()) / 1000);
+        alert(`⏱️ Please wait ${waitTime} seconds before resending`);
+        return;
+    }
+    
+    // Generate new code
+    const newCode = generateVerificationCode();
+    const type = pendingVerification.type === 'registration' ? 'verification' : '2fa';
+    
+    // Send email
+    const sent = await sendVerificationEmail(email, newCode, type);
+    
+    if (sent) {
+        // Update pending verification
+        pendingVerification.code = newCode;
+        pendingVerification.expiresAt = Date.now() + 600000;
+        
+        alert('📧 New verification code sent!');
     }
 }
 
@@ -2666,7 +3059,87 @@ function resendCode() {
 }
 
 function loginWithGoogle() {
-    alert(`🔵 Google Sign-In\n\nGoogle authentication would be configured here.\n\nFor demo, use email signup with Gmail.`);
+    // Detect mobile device
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    try {
+        google.accounts.id.initialize({
+            client_id: '888032224287-20qgalf8pvpg7s7589il4f025cva4944.apps.googleusercontent.com',
+            callback: handleGoogleCallback,
+            ux_mode: isMobile ? 'redirect' : 'popup',
+            redirect_uri: window.location.origin
+        });
+        
+        if (isMobile) {
+            // Mobile: Show login prompt (more reliable than popup)
+            google.accounts.id.prompt((notification) => {
+                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                    // Fallback: Use One Tap
+                    console.log('Google One Tap not displayed, trying alternative...');
+                    alert('Please use email login or try again.');
+                }
+            });
+        } else {
+            // Desktop: Use popup
+            google.accounts.id.prompt();
+        }
+    } catch (error) {
+        console.error('Google Sign-In Error:', error);
+        alert('❌ Google login unavailable. Please use email login.');
+    }
+}
+
+function handleGoogleCallback(response) {
+
+        if (!response || !response.credential) {
+        console.error('Google login failed:', response);
+        alert('❌ Google login failed. Please try again or use email login.');
+        return;
+    }
+
+    // Decode the JWT token
+     const credential = response.credential;
+        const payload = JSON.parse(atob(credential.split('.')[1]));
+        
+    const googleUser = {
+        email: payload.email,
+        name: payload.name,
+        profilePicture: payload.picture,
+        emailVerified: payload.email_verified,
+        provider: 'google'
+    };
+    
+    // Check if user exists in database
+    let existingUser = userDatabase.find(u => u.email === googleUser.email);
+    
+    if (!existingUser) {
+        // Create new user
+        const newUser = {
+            name: googleUser.name,
+            email: googleUser.email,
+            password: 'GOOGLE_AUTH_' + Date.now(), // OAuth users don't need password
+            phone: '',
+            profilePicture: googleUser.profilePicture,
+            provider: 'google',
+            verified: true,
+            createdAt: new Date().toISOString()
+        };
+        
+        userDatabase.push(newUser);
+        currentUser = newUser;
+    } else {
+        // Login existing user
+        currentUser = existingUser;
+    }
+    
+    
+    // Save and update UI
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    localStorage.setItem('restaurantUsers', JSON.stringify(userDatabase));
+    updateHeaderForLoggedInUser();
+    closeModal('loginModal');
+    
+    alert(`✅ Welcome${currentUser.name ? ', ' + currentUser.name : ''}!\n\nYou are now logged in with Google.`);
 }
 
 function loginWithApple() {
@@ -2690,9 +3163,15 @@ function initMap() {
     
     const center = { lat: UK_CONFIG.restaurant.lat, lng: UK_CONFIG.restaurant.lng };
     
-    googleMap = new google.maps.Map(mapContainer, {
-        center: center,
-        zoom: 14,
+        const restaurantLocation = {
+        lat: 53.447830,  // UPDATED
+        lng: -2.076047   // UPDATED
+        };
+
+        googleMap = new google.maps.Map(mapContainer, {
+        center: restaurantLocation,
+        zoom: 15,
+
         mapTypeId: 'hybrid', // Satellite with labels
         mapTypeControl: true,
         mapTypeControlOptions: {
@@ -2703,6 +3182,8 @@ function initMap() {
         zoomControl: true,
         fullscreenControl: false,
         streetViewControl: false
+
+        
     });
     
     // Restaurant marker
@@ -2722,8 +3203,35 @@ function initMap() {
     });
     
     // Click to select location
-    googleMap.addListener('click', (e) => {
-        addMarker(e.latLng);
+// Remove old listeners first
+
+// Add fresh click listener
+google.maps.event.clearListeners(googleMap, 'click');
+googleMap.addListener('click', (e) => {
+    const lat = e.latLng.lat();
+    const lng = e.latLng.lng();
+    
+    // Update marker position
+    if (deliveryMarker) {
+        deliveryMarker.setPosition(e.latLng);
+    } else {
+        deliveryMarker = new google.maps.Marker({
+            position: e.latLng,
+            map: googleMap,
+            title: 'Delivery Location',
+            draggable: true,
+            animation: google.maps.Animation.DROP
+        });
+    }
+    
+    // Update selected location
+    selectedLocation = { lat, lng };
+    
+    // Center map on new location
+    googleMap.panTo(e.latLng);
+    
+    console.log('Location selected:', lat, lng);
+            addMarker(e.latLng);
     });
 }
 
@@ -2978,9 +3486,38 @@ function toggleMobileMenu() {
 // ========================================
 // INITIALIZATION
 // ========================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🌯 Antalya Shawarma v3.0.0 Loading...');
+// ========================================
+// MOBILE OWNER BUTTON FIX
+// ========================================
+
+
+
+// Call this after successful owner login
+function handleOwnerLogin() {
+    const email = document.getElementById('devEmail').value.trim();
+    const password = document.getElementById('devPassword').value;
+    const pin = document.getElementById('devPin').value;
     
+    if (email !== OWNER_CREDENTIALS.email || 
+        password !== OWNER_CREDENTIALS.password || 
+        pin !== OWNER_CREDENTIALS.pin) {
+        alert('❌ Invalid credentials');
+        return;
+    }
+    
+    isOwnerLoggedIn = true;
+
+    closeModal('ownerModal');
+    document.getElementById('ownerDashboard').style.display = 'block';
+    updateOwnerStats();
+    
+    alert('✅ Owner access granted!');
+}
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateOwnerButtonVisibility(); // Ensure owner button is hidden on load    
+
     // Load data
     loadData();
     loadBankDetails();
@@ -3033,10 +3570,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.target.value = value;
         });
     }
-    
-    console.log('✅ Antalya Shawarma Ready!');
-    console.log(`📦 ${Object.keys(menuData).length} categories loaded`);
-    console.log(`🍽️ ${Object.values(menuData).flat().length} menu items available`);
+ 
 });
 
 // Setup mobile bottom navigation with proper event listeners
@@ -3063,7 +3597,7 @@ function setupMobileNavigation() {
         }
     });
     
-    console.log('📱 Mobile navigation initialized');
+
 }
 
 // Make functions globally available
@@ -3663,6 +4197,17 @@ function deleteUserAccount() {
     location.reload();
 }
 
+// Force hide owner buttons on initial load
+setTimeout(() => {
+    const desktopOwnerBtn = document.getElementById('ownerAccessBtn');
+    const mobileOwnerBtn = document.getElementById('mobileOwnerBtn');
+    
+    if (!currentUser || currentUser.email !== 'admin@antalyashawarma.com') {
+        if (desktopOwnerBtn) desktopOwnerBtn.style.display = 'none';
+        if (mobileOwnerBtn) mobileOwnerBtn.style.display = 'none';
+    }
+}, 100);
+
 // Review system exports
 window.openWriteReview = openWriteReview;
 window.setRating = setRating;
@@ -3677,3 +4222,7 @@ window.showOwnerDashboardDirect = showOwnerDashboardDirect;
 window.openForgotPasswordFromChangePassword = openForgotPasswordFromChangePassword;
 window.confirmDeleteAccount = confirmDeleteAccount;
 window.deleteUserAccount = deleteUserAccount;
+window.updateOwnerButtonVisibility = updateOwnerButtonVisibility;
+window.handleOwnerLogin = handleOwnerLogin;
+window.loginWithGoogle = loginWithGoogle;
+window.loginWithApple = loginWithApple;

@@ -1,6 +1,6 @@
 /* ============================================
    MODERN MOBILE-FIRST DESIGN - mobile.css
-   Professional Design
+   Professional Design - FIXED VERSION
    ============================================ */
 
 /* CSS Variables for consistent theming */
@@ -42,11 +42,10 @@ html {
    MOBILE BOTTOM NAVIGATION BAR
    ======================================== */
 .mobile-bottom-nav {
-    display: none; /* Hidden on desktop */
+    display: none;
 }
 
 @media (max-width: 768px) {
-    /* Show mobile bottom nav */
     .mobile-bottom-nav {
         display: flex !important;
         position: fixed !important;
@@ -54,7 +53,7 @@ html {
         left: 0 !important;
         right: 0 !important;
         width: 100% !important;
-        height: auto !important;
+        height: 70px !important;
         background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%) !important;
         border-top: 1px solid rgba(230, 57, 70, 0.3) !important;
         padding: 8px 5px calc(8px + env(safe-area-inset-bottom, 0px)) 5px !important;
@@ -79,11 +78,11 @@ html {
         border-radius: 8px !important;
         transition: background 0.2s !important;
         -webkit-tap-highlight-color: rgba(230, 57, 70, 0.3) !important;
-        touch-action: manipulation !important;
+        touch-action: manipulation;
     }
     
     .mobile-nav-item:active {
-        background: rgba(230, 57, 70, 0.2) !important;
+       background: rgba(230, 57, 70, 0.2) !important;
     }
     
     .mobile-nav-icon {
@@ -123,26 +122,28 @@ html {
         display: none !important;
     }
     
-    /* Hide desktop nav buttons on mobile */
     .nav-buttons {
         display: none !important;
     }
     
-    /* Hide mobile menu button */
     .mobile-menu-btn {
         display: none !important;
     }
     
-    /* Add padding to body for bottom nav */
     body {
-        padding-bottom: 85px !important;
-    }
+       padding-bottom: 90px !important;
+   }
+   
+   .menu-grid,
+   .menu-list,
+   #menuSection {
+       padding-bottom: 20px !important;
+   }
 }
 
 /* ==================== MOBILE SPECIFIC ==================== */
 @media (max-width: 768px) {
     
-    /* Header redesign */
     .header {
         padding: 0.6rem 1rem;
         background: linear-gradient(180deg, #0f0f0f 0%, rgba(15, 15, 15, 0.95) 100%);
@@ -154,7 +155,6 @@ html {
         font-weight: 700;
     }
     
-    /* SHOW logo text on mobile */
     .logo-text {
         display: inline !important;
         font-size: 1rem !important;
@@ -177,7 +177,6 @@ html {
         font-size: 0.65rem;
     }
     
-    /* Hero section */
     .hero {
         height: 85vh;
         min-height: 500px;
@@ -200,7 +199,6 @@ html {
         border-radius: var(--radius-lg);
     }
     
-    /* Category bar */
     .category-bar {
         padding: 0.8rem 0;
     }
@@ -232,7 +230,6 @@ html {
         font-weight: 600;
     }
     
-    /* Menu grid/list */
     .menu-grid {
         grid-template-columns: 1fr !important;
         gap: 0;
@@ -243,7 +240,6 @@ html {
         padding: 0 1rem;
     }
     
-    /* Menu section title */
     #menuTitle {
         font-size: 1.4rem !important;
         font-weight: 700;
@@ -252,7 +248,6 @@ html {
         border-bottom: 1px solid rgba(230, 57, 70, 0.2);
     }
     
-    /* Food card redesign - for fallback only */
     .food-card {
         display: flex;
         flex-direction: row;
@@ -293,7 +288,7 @@ html {
         font-size: 1.05rem;
         font-weight: 700;
         margin-bottom: 0.3rem;
-        padding-right: 45px; /* Space for favorite button */
+        padding-right: 45px;
     }
     
     .food-desc {
@@ -339,12 +334,13 @@ html {
         justify-content: center;
     }
     
-    /* MODAL - ALWAYS CENTERED */
+    /* ===== MODAL GENERAL STYLING ===== */
     .modal {
         padding: 1rem !important;
+        padding-bottom: calc(1rem + 100px) !important;
         align-items: center !important;
         justify-content: center !important;
-        display: none;
+        overflow-y: auto !important;
     }
     
     .modal[style*="display: flex"],
@@ -356,17 +352,14 @@ html {
         width: 94% !important;
         max-width: 500px !important;
         margin: auto !important;
+        margin-bottom: 100px !important;
         border-radius: 16px !important;
-        max-height: 88vh !important;
+        max-height: calc(85vh - 100px) !important;
         min-height: auto !important;
-        padding: 1.5rem 1.2rem 2rem 1.2rem !important;
+        padding: 1.5rem 1.2rem 2.5rem 1.2rem !important;
         animation: modalFadeIn 0.25s ease !important;
         position: relative !important;
-        top: auto !important;
-        bottom: auto !important;
-        left: auto !important;
-        right: auto !important;
-        transform: none !important;
+        overflow-y: auto !important;
     }
     
     @keyframes modalFadeIn {
@@ -380,7 +373,6 @@ html {
         }
     }
     
-    /* Remove the handle bar for centered modals */
     .modal-content::before {
         display: none !important;
     }
@@ -400,7 +392,7 @@ html {
         z-index: 10;
     }
     
-    /* Form elements */
+    /* ===== FORM ELEMENTS ===== */
     .form-group {
         margin-bottom: 1rem;
     }
@@ -416,20 +408,33 @@ html {
     .form-group textarea,
     .form-group select {
         font-size: 16px !important;
-        padding: 0.9rem 1rem;
-        border-radius: var(--radius-sm);
-        width: 100%;
+        padding: 0.9rem 1rem !important;
+        border-radius: var(--radius-sm) !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 48px !important;
+        box-sizing: border-box !important;
     }
     
-    /* Buttons */
+    /* DOB field fix */
+    .form-group input[type="date"],
+    #authDOB {
+        font-size: 16px !important;
+        padding: 0.9rem 1rem !important;
+        height: auto !important;
+        min-height: 48px !important;
+    }
+    
+    /* ===== BUTTONS ===== */
     .submit-btn {
-        width: 100%;
-        padding: 1rem;
-        font-size: 1rem;
-        font-weight: 700;
-        border-radius: var(--radius-md);
-        margin-top: 0.5rem;
-        min-height: 50px;
+        width: 100% !important;
+        padding: 1rem !important;
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+        border-radius: var(--radius-md) !important;
+        margin-top: 0.5rem !important;
+        margin-bottom: 20px !important;
+        min-height: 50px !important;
     }
     
     .submit-btn:active {
@@ -437,7 +442,6 @@ html {
         opacity: 0.9;
     }
     
-    /* Quantity controls */
     .quantity-control {
         display: flex;
         align-items: center;
@@ -460,7 +464,7 @@ html {
         text-align: center;
     }
     
-    /* Footer */
+    /* ===== FOOTER ===== */
     .social-footer {
         padding: 2rem 1rem;
         background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
@@ -479,8 +483,51 @@ html {
     .footer-section h3 {
         color: var(--primary);
     }
+    
+    /* ===== FOOD MODAL SPECIFIC ===== */
+    #foodModal .modal-content {
+        padding-bottom: 20px !important;
+        margin-bottom: 90px !important;
+    }
+    
+    #foodModal .modal-content > div:last-child {
+        margin-bottom: 0 !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    #foodModal .submit-btn {
+        margin-bottom: 0 !important;
+    }
+    
+    /* ===== MAP MODAL SPECIFIC (FIXED) ===== */
+#mapModal {
+    z-index: 100000 !important;
 }
 
+#mapModal > div {
+    height: 100% !important;
+    padding-bottom: 0 !important;
+}
+
+/* Map buttons wrapper - fixed at bottom */
+@media (max-width: 768px) {
+    #mapModal > div > div:last-child {
+        position: fixed !important;
+        bottom: 90px !important;
+        left: 0 !important;
+        right: 0 !important;
+        padding: 1rem !important;
+        background: rgba(10, 10, 10, 0.95) !important;
+        z-index: 100001 !important;
+    }
+    
+    #mapModal button {
+        font-size: 0.9rem !important;
+        padding: 0.9rem !important;
+        min-height: 48px !important;
+    }
+}
+}
 /* Extra small phones */
 @media (max-width: 375px) {
     .hero-text h1 {
@@ -507,7 +554,7 @@ html {
 /* Landscape */
 @media (max-width: 896px) and (orientation: landscape) {
     .modal-content {
-        max-height: 100vh;
+        max-height: calc(100vh - 100px) !important;
         border-radius: 0;
     }
     
@@ -557,13 +604,12 @@ html {
     }
     
     .modal-content {
-        padding-bottom: max(2rem, calc(env(safe-area-inset-bottom) + 1rem));
+        padding-bottom: max(2.5rem, calc(2.5rem + env(safe-area-inset-bottom, 0px))) !important;
     }
 }
 
 /* Fullscreen modals */
 #driverDashboardModal,
-#mapModal,
 #driverTrackingModal {
     border-radius: 0 !important;
 }
@@ -574,3 +620,5 @@ html {
         grid-template-columns: repeat(2, 1fr) !important;
     }
 }
+
+

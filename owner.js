@@ -762,30 +762,43 @@ function showOwnerLogin() {
 }
 
 function handleOwnerLogin() {
-    const email = document.getElementById('devEmail').value;
+    const email = document.getElementById('devEmail').value.trim();
     const password = document.getElementById('devPassword').value;
     const pin = document.getElementById('devPin').value;
     
-    if (email === OWNER_CREDENTIALS.email && password === OWNER_CREDENTIALS.password && pin === OWNER_CREDENTIALS.pin) {
-        isOwnerLoggedIn = true;
-        document.getElementById('ownerModal').style.display = 'none';
-        document.getElementById('ownerDashboard').style.display = 'block';
-        
-        // Show owner access button in header
-        const ownerBtn = document.getElementById('ownerAccessBtn');
-        if (ownerBtn) {
-            ownerBtn.style.display = 'flex';
-        }
-        
-        // Update stats
-        updateOwnerStats();
-        
-        // Refresh reviews to show owner controls
-        displayReviews();
-    } else {
-        alert('❌ Invalid credentials!\n\nDemo: admin@antalyashawarma.com / admin2024 / 1234');
+    if (email !== OWNER_CREDENTIALS.email || 
+        password !== OWNER_CREDENTIALS.password || 
+        pin !== OWNER_CREDENTIALS.pin) {
+        alert('❌ Invalid credentials');
+        return;
     }
+    
+    isOwnerLoggedIn = true;
+    
+    // Show owner button on ALL devices (desktop + mobile)
+    const desktopOwnerBtn = document.getElementById('ownerAccessBtn');
+    const mobileOwnerBtn = document.getElementById('mobileOwnerBtn');
+    
+    if (desktopOwnerBtn) desktopOwnerBtn.style.display = 'flex';
+    if (mobileOwnerBtn) mobileOwnerBtn.style.display = 'flex';
+    
+    closeModal('ownerModal');
+    document.getElementById('ownerDashboard').style.display = 'block';
+    updateOwnerStats();
+    
+    alert('✅ Owner access granted!');
+    
 }
+// Add to your DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', function() {
+    // Hide owner buttons by default
+    const desktopOwnerBtn = document.getElementById('ownerAccessBtn');
+    const mobileOwnerBtn = document.getElementById('mobileOwnerBtn');
+    if (desktopOwnerBtn) desktopOwnerBtn.style.display = 'none';
+    if (mobileOwnerBtn) mobileOwnerBtn.style.display = 'none';
+    
+    // Rest of your existing code...
+});
 
 function updateOwnerStats() {
     const totalRevenue = orderHistory.reduce((sum, o) => sum + o.total, 0);
